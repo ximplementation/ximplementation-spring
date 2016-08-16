@@ -5,7 +5,7 @@ The class `org.ximplementation.spring.ProxyImplementeeBeanCreationPostProcessor`
 
 Simply add the following content
 
-`&lt;bean class="org.ximplementation.spring.ProxyImplementeeBeanCreationPostProcessor"/&gt;`
+`<bean class="org.ximplementation.spring.ProxyImplementeeBeanCreationPostProcessor"/>`
 
 to you `applicationContext.xml`, then your Spring project will support multiple dependency injection and more ximplementation features.
 
@@ -56,4 +56,4 @@ You can write Spring components like this:
 
 ```
 
-The `Controller.service` will be injected successfully, and its `handle` method invocation will be delegated to `ServiceImplAnother` when the parameter is greater than `0`, to `ServiceImplInteger` when the parameter type is `Integer`, and to `ServiceImplDefault` otherwise.
+The `Controller.service` will be injected successfully though there are two instances, and its `handle` method invocation will be delegated to `ServiceImplAnother` when the parameter is greater than `0`, to `ServiceImplInteger` when the parameter type is `Integer`, and to `ServiceImplDefault` otherwise.
