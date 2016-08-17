@@ -7,7 +7,7 @@ Simply add the following content
 
 `<bean class="org.ximplementation.spring.ProxyImplementeeBeanCreationPostProcessor"/>`
 
-to you `applicationContext.xml`, then your Spring project will support multiple dependency injection and more ximplementation features.
+to your `applicationContext.xml`, then your Spring project will support multiple dependency injection and more ximplementation features.
 
 ## Example
 You can write Spring components like this:
