@@ -46,23 +46,24 @@ import org.ximplementation.support.PreparedImplementorBeanFactory;
 import org.ximplementation.support.ProxyImplementeeBeanBuilder;
 
 /**
- * 代理接口实例{@linkplain BeanPostProcessor}。
+ * A {@linkplain BeanPostProcessor} for creating dependency beans based on
+ * {@linkplain ProxyImplementeeBeanBuilder} of <i>ximplementation</i>.
  * <p>
- * 此类用于支持Spring中<i>ximplementation</i>依赖代理实例的创建。
+ * After adding the following configuration
  * </p>
  * <p>
- * 在Spring配置文件中添加了：
- * </p>
- * <p>
+ * <code>
  * &lt;bean
  * class="org.ximplementation.spring.ProxyImplementeeBeanCreationPostProcessor"
  * /&gt;
+ * </code>
  * </p>
  * <p>
- * 内容之后，Spring将能够支持存在多个实例的依赖注入，并使其具备<i>ximplementation</i>特性。
+ * , Spring will be able to support multiple dependency injection and more
+ * <i>ximplementation</i> features.
  * </p>
  * <p>
- * 例如：
+ * For example :
  * </p>
  * 
  * <pre>
@@ -104,21 +105,27 @@ import org.ximplementation.support.ProxyImplementeeBeanBuilder;
  * &#64;Implementor(Service.class)
  * public class ServiceImplInteger
  * {
- * 	&#64;Implement("handle")
+ * 	&#64;Implement
  * 	public String handle(Integer number){...}
  * }
  * </pre>
  * <p>
- * 注意，此类对于依赖代理实例的创建有如下限制条件：
+ * <b> Attention ： </b>
+ * </p>
+ * <p>
+ * There are some limitations for this class :
  * </p>
  * <ul>
- * <li>字段/写方法有{@linkplain Autowired}（或者{@code javax.inject.Inject}）注解</li>
- * <li>字段/写方法无{@linkplain Qualifier}（或者{@code javax.inject.Named}）注解</li>
- * <li>字段/写方法的类型是接口</li>
+ * <li>The injected field or setter method must be annotated with
+ * {@linkplain Autowired} or {@code javax.inject.Inject};</li>
+ * <li>The injected field or setter method must not be annotated with
+ * {@linkplain Qualifier} or {@code javax.inject.Named};</li>
+ * <li>The injected field type or setter method type must be {@code interface}.
+ * </li>
  * </ul>
  * 
  * @author earthangry@gmail.com
- * @date 2016年8月16日
+ * @date 2016-8-16
  *
  */
 public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwareBeanPostProcessorAdapter
@@ -132,7 +139,7 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 
 	private List<PreparedImplementorBeanFactory> preparedImplementorBeanFactories = new ArrayList<PreparedImplementorBeanFactory>();
 
-	/** 执行顺序，默认值为排在AutowiredAnnotationBeanPostProcessor之前 */
+	/** order, must be before AutowiredAnnotationBeanPostProcessor */
 	private int order = Ordered.LOWEST_PRECEDENCE - 3;
 
 	private ConfigurableListableBeanFactory beanFactory;
@@ -262,7 +269,7 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 			if (implementors == null || implementors.isEmpty())
 				continue;
 
-			Implementation implementation = this.implementationResolver
+			Implementation<?> implementation = this.implementationResolver
 					.resolve(propertyType, implementors);
 
 			PreparedImplementorBeanFactory preparedImplementorBeanFactory = new PreparedImplementorBeanFactory(
@@ -281,7 +288,7 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 	}
 
 	/**
-	 * 获取属性类型。
+	 * Returns property type for <i>ximplementation</i>.
 	 * 
 	 * @param beanClass
 	 * @param pd
@@ -295,7 +302,7 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 		{
 			Class<?> paramType = method.getParameterTypes()[0];
 
-			// 静态、添加了DI限定名、非接口的Method不应处理
+			// staitc, qualified, not interface
 			if (Modifier.isStatic(method.getModifiers()) || isQualified(method) || !paramType.isInterface())
 				return null;
 
@@ -317,7 +324,7 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 			return null;
 		}
 
-		// 静态、添加了DI限定名、非接口的Field不应处理
+		// staitc, qualified, not interface
 		if (Modifier.isStatic(field.getModifiers()) || isQualified(field) || !field.getType().isInterface())
 			return null;
 
@@ -330,7 +337,7 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 	}
 
 	/**
-	 * 判断元素是否添加了qualifier注解。
+	 * Returns if the element is qualified.
 	 * 
 	 * @param annotatedElement
 	 * @return
@@ -347,7 +354,7 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 	}
 
 	/**
-	 * 填充{@linkplain ImplementorManager}。
+	 * Inflate {@linkplain ImplementorManager}。
 	 * 
 	 * @param implementorManager
 	 * @param beanFactory

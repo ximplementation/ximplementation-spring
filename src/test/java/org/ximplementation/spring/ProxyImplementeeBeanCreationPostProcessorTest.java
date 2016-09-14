@@ -30,10 +30,10 @@ import org.ximplementation.Implementor;
 import org.ximplementation.Validity;
 
 /**
- * {@linkplain ProxyImplementeeBeanCreationPostProcessor}单元测试类。
+ * {@linkplain ProxyImplementeeBeanCreationPostProcessor} unit tests.
  * 
  * @author earthangry@gmail.com
- * @date 2016年8月16日
+ * @date 2016-8-16
  *
  */
 public class ProxyImplementeeBeanCreationPostProcessorTest

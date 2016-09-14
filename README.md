@@ -56,4 +56,4 @@ You can write Spring components like this:
 
 ```
 
-The `Controller.service` will be injected successfully though there are two instances, and its `handle` method invocation will be delegated to `ServiceImplAnother` when the parameter is greater than `0`, to `ServiceImplInteger` when the parameter type is `Integer`, and to `ServiceImplDefault` otherwise.
+The `Controller.service` will be injected successfully though there are two instances, and its `handle` method invocation will be delegated to `ServiceImplInteger` when the parameter type is `Integer`, to `ServiceImplAnother` when the parameter is greater than `0`, and to `ServiceImplDefault` otherwise.
