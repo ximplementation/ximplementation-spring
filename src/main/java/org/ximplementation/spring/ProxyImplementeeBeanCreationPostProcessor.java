@@ -266,7 +266,8 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 
 			Set<Class<?>> implementors = this.implementorManager.getImplementors(propertyType);
 
-			if (implementors == null || implementors.isEmpty())
+			// only handle multiple implementors
+			if (implementors == null || implementors.size() <= 1)
 				continue;
 
 			Implementation<?> implementation = this.implementationResolver
@@ -278,17 +279,18 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 			this.preparedImplementorBeanFactories
 					.add(preparedImplementorBeanFactory);
 
-			Object interfaceBean = this.proxyImplementeeBeanBuilder
+			Object implementeeBean = this.proxyImplementeeBeanBuilder
 					.build(implementation, preparedImplementorBeanFactory);
 
-			this.beanFactory.registerResolvableDependency(propertyType, interfaceBean);
+			this.beanFactory.registerResolvableDependency(propertyType, implementeeBean);
 		}
 
 		return pvs;
 	}
 
 	/**
-	 * Returns property type for <i>ximplementation</i>.
+	 * Returns property type for <i>ximplementation</i>, {@code null} if not
+	 * valid.
 	 * 
 	 * @param beanClass
 	 * @param pd
@@ -300,14 +302,19 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 
 		if (method != null)
 		{
+			// must not be staitc or qualified
+			if (Modifier.isStatic(method.getModifiers()) || isQualified(method))
+				return null;
+
 			Class<?> paramType = method.getParameterTypes()[0];
 
-			// staitc, qualified, not interface
-			if (Modifier.isStatic(method.getModifiers()) || isQualified(method) || !paramType.isInterface())
+			// must be interface
+			if (!paramType.isInterface())
 				return null;
 
 			Annotation autowiredAnno = findAutowiredAnnotation(method);
 
+			// must be autowired annotated
 			if (autowiredAnno != null)
 				return paramType;
 		}
@@ -324,16 +331,14 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 			return null;
 		}
 
-		// staitc, qualified, not interface
+		// must not be staitc or qualified, must be interface
 		if (Modifier.isStatic(field.getModifiers()) || isQualified(field) || !field.getType().isInterface())
 			return null;
 
 		Annotation autowiredAnno = findAutowiredAnnotation(field);
 
-		if (autowiredAnno != null)
-			return field.getType();
-
-		return null;
+		// must be autowired annotated
+		return (autowiredAnno == null ? null : field.getType());
 	}
 
 	/**
