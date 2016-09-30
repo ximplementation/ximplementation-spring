@@ -1,13 +1,13 @@
 # ximplementation-spring
 Ximplementation-spring lets you use ximplementation in Spring.
 
-The class `org.ximplementation.spring.ProxyImplementeeBeanCreationPostProcessor` is a Spring `BeanPostProcessor` for creating ximplementation beans.
+The class `org.ximplementation.spring.ImplementeeBeanCreationPostProcessor` is a Spring `BeanPostProcessor` for creating ximplementation beans.
 
 Simply add the following content
 
-`<bean class="org.ximplementation.spring.ProxyImplementeeBeanCreationPostProcessor"/>`
+`<bean class="org.ximplementation.spring.ImplementeeBeanCreationPostProcessor"/>`
 
-to your `applicationContext.xml`, then your Spring project will support multiple dependency injection and more ximplementation features.
+to your `applicationContext.xml`, then your Spring project will be able to support multiple dependency injection and more ximplementation features.
 
 ## Example
 You can write Spring components like this:

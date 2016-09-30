@@ -22,8 +22,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.BeansException;
@@ -41,26 +43,26 @@ import org.springframework.core.Ordered;
 import org.springframework.core.PriorityOrdered;
 import org.ximplementation.support.Implementation;
 import org.ximplementation.support.ImplementationResolver;
+import org.ximplementation.support.ImplementeeBeanBuilder;
 import org.ximplementation.support.ImplementorManager;
 import org.ximplementation.support.PreparedImplementorBeanFactory;
-import org.ximplementation.support.ProxyImplementeeBeanBuilder;
 
 /**
  * A {@linkplain BeanPostProcessor} for creating dependency beans based on
- * {@linkplain ProxyImplementeeBeanBuilder} of <i>ximplementation</i>.
+ * <i>ximplementation</i>.
  * <p>
  * After adding the following configuration
  * </p>
  * <p>
  * <code>
  * &lt;bean
- * class="org.ximplementation.spring.ProxyImplementeeBeanCreationPostProcessor"
+ * class="org.ximplementation.spring.ImplementeeBeanCreationPostProcessor"
  * /&gt;
  * </code>
  * </p>
  * <p>
- * , Spring will be able to support multiple dependency injection and more
- * <i>ximplementation</i> features.
+ * to your {@code applicationContext.xml}, Spring will be able to support
+ * multiple dependency injection and more <i>ximplementation</i> features.
  * </p>
  * <p>
  * For example :
@@ -113,31 +115,31 @@ import org.ximplementation.support.ProxyImplementeeBeanBuilder;
  * <b> Attention ： </b>
  * </p>
  * <p>
- * There are some limitations for this class :
+ * Tis class will only handle dependencies matching all of the following
+ * conditions:
  * </p>
  * <ul>
  * <li>The injected field or setter method must be annotated with
  * {@linkplain Autowired} or {@code javax.inject.Inject};</li>
- * <li>The injected field or setter method must not be annotated with
- * {@linkplain Qualifier} or {@code javax.inject.Named};</li>
- * <li>The injected field type or setter method type must be {@code interface}.
- * </li>
+ * <li>The injected field or setter method must NOT be annotated with
+ * {@linkplain Qualifier} or {@code javax.inject.Named}.</li>
+ * <li>There are more than one <i>implementor</i>s in the Spring context.</li>
  * </ul>
  * 
  * @author earthangry@gmail.com
  * @date 2016-8-16
  *
  */
-public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwareBeanPostProcessorAdapter
+public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBeanPostProcessorAdapter
 		implements PriorityOrdered, BeanFactoryAware
 {
 	private ImplementorManager implementorManager = new ImplementorManager();
 
 	private ImplementationResolver implementationResolver = new ImplementationResolver();
 
-	private ProxyImplementeeBeanBuilder proxyImplementeeBeanBuilder = new ProxyImplementeeBeanBuilder();
+	private ImplementeeBeanBuilder implementeeBeanBuilder = new CglibImplementeeBeanBuilder();
 
-	private List<PreparedImplementorBeanFactory> preparedImplementorBeanFactories = new ArrayList<PreparedImplementorBeanFactory>();
+	private ImplementeeBeanNameGenerator implementeeBeanNameGenerator = new ClassNameImplementeeBeanNameGenerator();
 
 	/** order, must be before AutowiredAnnotationBeanPostProcessor */
 	private int order = Ordered.LOWEST_PRECEDENCE - 3;
@@ -148,13 +150,17 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 
 	private final Set<Class<? extends Annotation>> qualifierAnnotationTypes = new LinkedHashSet<Class<? extends Annotation>>();
 
+	private List<PreparedImplementorBeanFactory> preparedImplementorBeanFactories = new ArrayList<PreparedImplementorBeanFactory>();
+
+	private Map<Class<?>, Object> initializedImplementeeBeans = new HashMap<Class<?>, Object>();
+
 	@SuppressWarnings("unchecked")
-	public ProxyImplementeeBeanCreationPostProcessor()
+	public ImplementeeBeanCreationPostProcessor()
 	{
 		super();
 
 		this.autowiredAnnotationTypes.add(Autowired.class);
-		ClassLoader cl = ProxyImplementeeBeanCreationPostProcessor.class.getClassLoader();
+		ClassLoader cl = ImplementeeBeanCreationPostProcessor.class.getClassLoader();
 		try
 		{
 			this.autowiredAnnotationTypes.add((Class<? extends Annotation>) cl.loadClass("javax.inject.Inject"));
@@ -194,15 +200,26 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 		this.implementationResolver = implementationResolver;
 	}
 
-	public ProxyImplementeeBeanBuilder getProxyImplementeeBeanBuilder()
+	public ImplementeeBeanBuilder getImplementeeBeanBuilder()
 	{
-		return proxyImplementeeBeanBuilder;
+		return implementeeBeanBuilder;
 	}
 
-	public void setProxyImplementeeBeanBuilder(
-			ProxyImplementeeBeanBuilder proxyImplementeeBeanBuilder)
+	public void setImplementeeBeanBuilder(
+			ImplementeeBeanBuilder implementeeBeanBuilder)
 	{
-		this.proxyImplementeeBeanBuilder = proxyImplementeeBeanBuilder;
+		this.implementeeBeanBuilder = implementeeBeanBuilder;
+	}
+
+	public ImplementeeBeanNameGenerator getImplementeeBeanNameGenerator()
+	{
+		return implementeeBeanNameGenerator;
+	}
+
+	public void setImplementeeBeanNameGenerator(
+			ImplementeeBeanNameGenerator implementeeBeanNameGenerator)
+	{
+		this.implementeeBeanNameGenerator = implementeeBeanNameGenerator;
 	}
 
 	public Set<Class<? extends Annotation>> getAutowiredAnnotationTypes()
@@ -254,7 +271,7 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 	{
 		if (pds == null || pds.length == 0)
 			return pvs;
-
+		
 		Class<?> beanClass = bean.getClass();
 
 		for (PropertyDescriptor pd : pds)
@@ -270,19 +287,32 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 			if (implementors == null || implementors.size() <= 1)
 				continue;
 
-			Implementation<?> implementation = this.implementationResolver
-					.resolve(propertyType, implementors);
+			Object implementeeBean = getInitializedImplementeebean(
+					propertyType);
 
-			PreparedImplementorBeanFactory preparedImplementorBeanFactory = new PreparedImplementorBeanFactory(
-					implementors);
+			if (implementeeBean == null)
+			{
+				Implementation<?> implementation = this.implementationResolver
+						.resolve(propertyType, implementors);
 
-			this.preparedImplementorBeanFactories
-					.add(preparedImplementorBeanFactory);
+				PreparedImplementorBeanFactory preparedImplementorBeanFactory = new PreparedImplementorBeanFactory(
+						implementors);
 
-			Object implementeeBean = this.proxyImplementeeBeanBuilder
-					.build(implementation, preparedImplementorBeanFactory);
+				this.preparedImplementorBeanFactories
+						.add(preparedImplementorBeanFactory);
 
-			this.beanFactory.registerResolvableDependency(propertyType, implementeeBean);
+				implementeeBean = this.implementeeBeanBuilder
+						.build(implementation, preparedImplementorBeanFactory);
+
+				implementeeBean = this.beanFactory.initializeBean(
+						implementeeBean, generateImplementeeBeanName(
+								propertyType, implementeeBean));
+
+				setInitializedImplementeebean(propertyType, implementeeBean);
+
+				this.beanFactory.registerResolvableDependency(propertyType,
+					implementeeBean);
+			}
 		}
 
 		return pvs;
@@ -339,6 +369,45 @@ public class ProxyImplementeeBeanCreationPostProcessor extends InstantiationAwar
 
 		// must be autowired annotated
 		return (autowiredAnno == null ? null : field.getType());
+	}
+
+	/**
+	 * Generate the name of <i>implementee</i> bean.
+	 * 
+	 * @param implementee
+	 * @param implementeeBean
+	 * @return
+	 */
+	protected String generateImplementeeBeanName(Class<?> implementee,
+			Object implementeeBean)
+	{
+		return this.implementeeBeanNameGenerator.generate(implementee,
+				implementeeBean);
+	}
+
+	/**
+	 * Get the <i>implementee</i> bean if initialized previous, {@code null}
+	 * otherwise.
+	 * 
+	 * @param implementee
+	 * @return
+	 */
+	protected Object getInitializedImplementeebean(Class<?> implementee)
+	{
+		return this.initializedImplementeeBeans.get(implementee);
+	}
+
+	/**
+	 * Set <i>implementee</i> bean for using by {{
+	 * {@link #getInitializedImplementeebean(Class)}.
+	 * 
+	 * @param implementee
+	 * @param implementeeBean
+	 */
+	protected void setInitializedImplementeebean(Class<?> implementee,
+			Object implementeeBean)
+	{
+		this.initializedImplementeeBeans.put(implementee, implementeeBean);
 	}
 
 	/**

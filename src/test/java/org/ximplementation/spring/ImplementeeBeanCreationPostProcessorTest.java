@@ -30,13 +30,13 @@ import org.ximplementation.Implementor;
 import org.ximplementation.Validity;
 
 /**
- * {@linkplain ProxyImplementeeBeanCreationPostProcessor} unit tests.
+ * {@linkplain ImplementeeBeanCreationPostProcessor} unit tests.
  * 
  * @author earthangry@gmail.com
  * @date 2016-8-16
  *
  */
-public class ProxyImplementeeBeanCreationPostProcessorTest
+public class ImplementeeBeanCreationPostProcessorTest
 {
 	private ApplicationContext applicationContext;
 
@@ -44,7 +44,7 @@ public class ProxyImplementeeBeanCreationPostProcessorTest
 	public void setUp() throws Exception
 	{
 		applicationContext = new ClassPathXmlApplicationContext(
-				"classpath:ProxyImplementeeBeanCreationPostProcessorTest.xml");
+				"classpath:ImplementeeBeanCreationPostProcessorTest.xml");
 	}
 
 	@After
@@ -80,6 +80,14 @@ public class ProxyImplementeeBeanCreationPostProcessorTest
 
 			Assert.assertEquals(TService3.MY_RE, re);
 		}
+
+		{
+			TController1 controller1 = applicationContext
+					.getBean(TController1.class);
+
+			Assert.assertTrue(
+					controller1.getTservice() == controller.getTservice());
+		}
 	}
 
 	@Component
@@ -112,6 +120,28 @@ public class ProxyImplementeeBeanCreationPostProcessorTest
 		public String handle(Number number)
 		{
 			return this.tservice.handle(number);
+		}
+	}
+
+	@Component
+	public static class TController1
+	{
+		@Autowired
+		private TService tservice;
+
+		public TController1()
+		{
+			super();
+		}
+
+		public TService getTservice()
+		{
+			return tservice;
+		}
+
+		public void setTservice(TService tservice)
+		{
+			this.tservice = tservice;
 		}
 	}
 

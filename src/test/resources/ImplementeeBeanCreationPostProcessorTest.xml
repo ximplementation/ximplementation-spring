@@ -15,5 +15,5 @@
 	
 	<aop:aspectj-autoproxy />
 	
-    <bean class="org.ximplementation.spring.ProxyImplementeeBeanCreationPostProcessor" />
+    <bean class="org.ximplementation.spring.ImplementeeBeanCreationPostProcessor" />
 </beans>
