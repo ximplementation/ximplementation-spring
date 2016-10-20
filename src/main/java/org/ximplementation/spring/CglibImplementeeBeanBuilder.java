@@ -16,10 +16,10 @@ package org.ximplementation.spring;
 
 import java.lang.reflect.Method;
 
-import org.ximplementation.support.DefaultImplementeeMethodInvocationInfoEvaluator;
+import org.ximplementation.support.DefaultImplementeeMethodInvocationFactory;
 import org.ximplementation.support.Implementation;
 import org.ximplementation.support.ImplementeeBeanBuilder;
-import org.ximplementation.support.ImplementeeMethodInvocationInfoEvaluator;
+import org.ximplementation.support.ImplementeeMethodInvocationFactory;
 import org.ximplementation.support.ImplementorBeanFactory;
 import org.ximplementation.support.ProxyImplementeeBeanBuilder;
 import org.ximplementation.support.ProxyImplementeeInvocationSupport;
@@ -45,23 +45,23 @@ import net.sf.cglib.proxy.InvocationHandler;
  */
 public class CglibImplementeeBeanBuilder implements ImplementeeBeanBuilder
 {
-	private ImplementeeMethodInvocationInfoEvaluator implementeeMethodInvocationInfoEvaluator;
+	private ImplementeeMethodInvocationFactory implementeeMethodInvocationFactory;
 
 	public CglibImplementeeBeanBuilder()
 	{
 		super();
-		this.implementeeMethodInvocationInfoEvaluator = new DefaultImplementeeMethodInvocationInfoEvaluator();
+		this.implementeeMethodInvocationFactory = new DefaultImplementeeMethodInvocationFactory();
 	}
 
-	public ImplementeeMethodInvocationInfoEvaluator getImplementeeMethodInvocationInfoEvaluator()
+	public ImplementeeMethodInvocationFactory getImplementeeMethodInvocationFactory()
 	{
-		return implementeeMethodInvocationInfoEvaluator;
+		return implementeeMethodInvocationFactory;
 	}
 
-	public void setImplementeeMethodInvocationInfoEvaluator(
-			ImplementeeMethodInvocationInfoEvaluator implementeeMethodInvocationInfoEvaluator)
+	public void setImplementeeMethodInvocationFactory(
+			ImplementeeMethodInvocationFactory implementeeMethodInvocationFactory)
 	{
-		this.implementeeMethodInvocationInfoEvaluator = implementeeMethodInvocationInfoEvaluator;
+		this.implementeeMethodInvocationFactory = implementeeMethodInvocationFactory;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -85,7 +85,7 @@ public class CglibImplementeeBeanBuilder implements ImplementeeBeanBuilder
 	{
 		InvocationHandler invocationHandler = new CglibImplementeeBeanInvocationHandler(
 				implementation, implementorBeanFactory,
-				implementeeMethodInvocationInfoEvaluator);
+				implementeeMethodInvocationFactory);
 
 		Enhancer enhancer = new Enhancer();
 		enhancer.setSuperclass(implementation.getImplementee());
@@ -105,10 +105,10 @@ public class CglibImplementeeBeanBuilder implements ImplementeeBeanBuilder
 		public CglibImplementeeBeanInvocationHandler(
 				Implementation<?> implementation,
 				ImplementorBeanFactory implementorBeanFactory,
-				ImplementeeMethodInvocationInfoEvaluator implementeeMethodInvocationInfoEvaluator)
+				ImplementeeMethodInvocationFactory implementeeMethodInvocationFactory)
 		{
 			super(implementation, implementorBeanFactory,
-					implementeeMethodInvocationInfoEvaluator);
+					implementeeMethodInvocationFactory);
 		}
 
 		@Override
