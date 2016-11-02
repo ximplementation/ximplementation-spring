@@ -20,7 +20,6 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -115,15 +114,16 @@ import org.ximplementation.support.PreparedImplementorBeanFactory;
  * <b> Attention ： </b>
  * </p>
  * <p>
- * Tis class will only handle dependencies matching all of the following
+ * This class will only handle dependencies matching all of the following
  * conditions:
  * </p>
  * <ul>
- * <li>The injected field or setter method must be annotated with
+ * <li>The injected setter/getter method or field must be annotated with
  * {@linkplain Autowired} or {@code javax.inject.Inject};</li>
- * <li>The injected field or setter method must NOT be annotated with
+ * <li>The injected setter/getter method or field must NOT be annotated with
  * {@linkplain Qualifier} or {@code javax.inject.Named}.</li>
- * <li>There are more than one <i>implementor</i>s in the Spring context.</li>
+ * <li>There are more than one <i>implementor</i>s for the injected type in the
+ * Spring context.</li>
  * </ul>
  * 
  * @author earthangry@gmail.com
@@ -142,7 +142,7 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 	private ImplementeeBeanNameGenerator implementeeBeanNameGenerator = new ClassNameImplementeeBeanNameGenerator();
 
 	/** order, must be before AutowiredAnnotationBeanPostProcessor */
-	private int order = Ordered.LOWEST_PRECEDENCE - 3;
+	private int order = Ordered.HIGHEST_PRECEDENCE;
 
 	private ConfigurableListableBeanFactory beanFactory;
 
@@ -287,7 +287,7 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 			if (implementors == null || implementors.size() <= 1)
 				continue;
 
-			Object implementeeBean = getInitializedImplementeebean(
+			Object implementeeBean = getInitializedImplementeeBean(
 					propertyType);
 
 			if (implementeeBean == null)
@@ -296,7 +296,7 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 						.resolve(propertyType, implementors);
 
 				PreparedImplementorBeanFactory preparedImplementorBeanFactory = new PreparedImplementorBeanFactory(
-						implementors);
+						implementation);
 
 				this.preparedImplementorBeanFactories
 						.add(preparedImplementorBeanFactory);
@@ -308,7 +308,7 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 						implementeeBean, generateImplementeeBeanName(
 								propertyType, implementeeBean));
 
-				setInitializedImplementeebean(propertyType, implementeeBean);
+				setInitializedImplementeeBean(propertyType, implementeeBean);
 
 				this.beanFactory.registerResolvableDependency(propertyType,
 					implementeeBean);
@@ -328,46 +328,34 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 	 */
 	protected Class<?> getPropertyTypeForXImplementation(Class<?> beanClass, PropertyDescriptor pd)
 	{
-		Method method = pd.getWriteMethod();
-
-		if (method != null)
+		// write method
+		Method writeMethod = pd.getWriteMethod();
+		if (writeMethod != null && !isQualified(writeMethod))
 		{
-			// must not be staitc or qualified
-			if (Modifier.isStatic(method.getModifiers()) || isQualified(method))
-				return null;
+			Annotation autowiredAnno = findAutowiredAnnotation(writeMethod);
 
-			Class<?> paramType = method.getParameterTypes()[0];
-
-			// must be interface
-			if (!paramType.isInterface())
-				return null;
-
-			Annotation autowiredAnno = findAutowiredAnnotation(method);
-
-			// must be autowired annotated
 			if (autowiredAnno != null)
-				return paramType;
+				return writeMethod.getParameterTypes()[0];
 		}
 
-		String propertyName = pd.getName();
-		Field field = null;
-
-		try
+		// read method
+		Method readMethod = pd.getReadMethod();
+		if (readMethod != null && !isQualified(readMethod))
 		{
-			field = beanClass.getDeclaredField(propertyName);
-		}
-		catch (NoSuchFieldException e)
-		{
-			return null;
+			Annotation autowiredAnno = findAutowiredAnnotation(readMethod);
+
+			if (autowiredAnno != null)
+				return readMethod.getReturnType();
 		}
 
-		// must not be staitc or qualified, must be interface
-		if (Modifier.isStatic(field.getModifiers()) || isQualified(field) || !field.getType().isInterface())
+		// Field
+		Field field = findFieldByName(beanClass, pd.getName());
+
+		if (field == null || isQualified(field))
 			return null;
 
 		Annotation autowiredAnno = findAutowiredAnnotation(field);
 
-		// must be autowired annotated
 		return (autowiredAnno == null ? null : field.getType());
 	}
 
@@ -386,25 +374,25 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 	}
 
 	/**
-	 * Get the <i>implementee</i> bean if initialized previous, {@code null}
+	 * Gets the <i>implementee</i> bean if initialized previous, {@code null}
 	 * otherwise.
 	 * 
 	 * @param implementee
 	 * @return
 	 */
-	protected Object getInitializedImplementeebean(Class<?> implementee)
+	protected Object getInitializedImplementeeBean(Class<?> implementee)
 	{
 		return this.initializedImplementeeBeans.get(implementee);
 	}
 
 	/**
-	 * Set <i>implementee</i> bean for using by {{
-	 * {@link #getInitializedImplementeebean(Class)}.
+	 * Sets <i>implementee</i> bean for using by {{
+	 * {@link #getInitializedImplementeeBean(Class)}.
 	 * 
 	 * @param implementee
 	 * @param implementeeBean
 	 */
-	protected void setInitializedImplementeebean(Class<?> implementee,
+	protected void setInitializedImplementeeBean(Class<?> implementee,
 			Object implementeeBean)
 	{
 		this.initializedImplementeeBeans.put(implementee, implementeeBean);
@@ -463,6 +451,36 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 		}
 
 		implementorManager.addImplementor(allBeanClasses);
+	}
+
+	/**
+	 * Find {@code Field} by name.
+	 * 
+	 * @param clazz
+	 * @param fieldName
+	 * @return
+	 */
+	protected Field findFieldByName(Class<?> clazz, String fieldName)
+	{
+		while (clazz != null && !Object.class.equals(clazz))
+		{
+			Field field = null;
+
+			try
+			{
+				field = clazz.getDeclaredField(fieldName);
+			}
+			catch (NoSuchFieldException e)
+			{
+			}
+
+			if (field != null)
+				return field;
+
+			clazz = clazz.getSuperclass();
+		}
+
+		return null;
 	}
 
 	/**
