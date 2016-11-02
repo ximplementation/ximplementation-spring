@@ -21,7 +21,6 @@ import org.ximplementation.support.Implementation;
 import org.ximplementation.support.ImplementeeBeanBuilder;
 import org.ximplementation.support.ImplementeeMethodInvocationFactory;
 import org.ximplementation.support.ImplementorBeanFactory;
-import org.ximplementation.support.ProxyImplementeeBeanBuilder;
 import org.ximplementation.support.ProxyImplementeeInvocationSupport;
 
 import net.sf.cglib.proxy.Enhancer;
@@ -30,13 +29,8 @@ import net.sf.cglib.proxy.InvocationHandler;
 /**
  * Implementee bean builder based on CGLIB.
  * <p>
- * It creating <i>implementee</i> bean of new CGLIB class and can work with
+ * It creating <i>implementee</i> beans of new CGLIB class and can work with
  * Spring AOP.
- * </p>
- * <p>
- * The JDK proxy <i>implementee</i> bean created by
- * {@linkplain ProxyImplementeeBeanBuilder} is not applicable in Spring, because
- * it can not work with Spring AOP.
  * </p>
  * 
  * @author earthangry@gmail.com
@@ -73,7 +67,7 @@ public class CglibImplementeeBeanBuilder implements ImplementeeBeanBuilder
 	}
 
 	/**
-	 * Build cglib based <i>implementee</i> bean.
+	 * Build CGLIB <i>implementee</i> bean.
 	 * 
 	 * @param implementation
 	 * @param implementorBeanFactory

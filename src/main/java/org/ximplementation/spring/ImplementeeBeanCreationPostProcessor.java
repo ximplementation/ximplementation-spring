@@ -35,7 +35,6 @@ import org.springframework.beans.factory.CannotLoadBeanClassException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessorAdapter;
 import org.springframework.core.Ordered;
@@ -47,7 +46,7 @@ import org.ximplementation.support.ImplementorManager;
 import org.ximplementation.support.PreparedImplementorBeanFactory;
 
 /**
- * A {@linkplain BeanPostProcessor} for creating dependency beans based on
+ * A {@code BeanPostProcessor} for creating dependency beans based on
  * <i>ximplementation</i>.
  * <p>
  * After adding the following configuration
@@ -64,7 +63,23 @@ import org.ximplementation.support.PreparedImplementorBeanFactory;
  * multiple dependency injection and more <i>ximplementation</i> features.
  * </p>
  * <p>
- * For example :
+ * This {@code BeanPostProcessor} will only handle dependencies matching all of
+ * the following conditions:
+ * </p>
+ * <ul>
+ * <li>The injected setter/getter method or field is annotated with
+ * {@linkplain Autowired} or {@code javax.inject.Inject};</li>
+ * <li>The injected setter/getter method or field is NOT annotated with
+ * {@linkplain Qualifier} or {@code javax.inject.Named}.</li>
+ * <li>There are more than one <i>implementor</i>s for the injected type in the
+ * Spring context.</li>
+ * </ul>
+ * <p>
+ * If matched, it will use the {@linkplain CglibImplementeeBeanBuilder} to
+ * create a CGLIB <i>implementee</i> bean for dependency injection.
+ * </p>
+ * <p>
+ * Examples :
  * </p>
  * 
  * <pre>
@@ -111,20 +126,11 @@ import org.ximplementation.support.PreparedImplementorBeanFactory;
  * }
  * </pre>
  * <p>
- * <b> Attention ： </b>
+ * The Controller.service will be injected successfully though there are more
+ * than one instances, and its handle method invocation will be delegated to
+ * ServiceImplInteger when the parameter type is Integer, to ServiceImplAnother
+ * when the parameter is greater than 0, and to ServiceImplDefault otherwise.
  * </p>
- * <p>
- * This class will only handle dependencies matching all of the following
- * conditions:
- * </p>
- * <ul>
- * <li>The injected setter/getter method or field must be annotated with
- * {@linkplain Autowired} or {@code javax.inject.Inject};</li>
- * <li>The injected setter/getter method or field must NOT be annotated with
- * {@linkplain Qualifier} or {@code javax.inject.Named}.</li>
- * <li>There are more than one <i>implementor</i>s for the injected type in the
- * Spring context.</li>
- * </ul>
  * 
  * @author earthangry@gmail.com
  * @date 2016-8-16
