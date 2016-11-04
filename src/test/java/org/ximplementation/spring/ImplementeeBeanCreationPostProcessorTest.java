@@ -14,11 +14,15 @@
 
 package org.ximplementation.spring;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,108 +57,250 @@ public class ImplementeeBeanCreationPostProcessorTest
 	}
 
 	@Test
-	public void test()
+	public void testInjectionAndAop()
 	{
-		TController controller = applicationContext.getBean(TController.class);
+		Controller controller = applicationContext.getBean(Controller.class);
 
+		String re = controller.handle(new Byte((byte) 5));
+		assertEquals(MyAspect.PREFIX + ServiceImpl0.MY_RE, re);
+
+		re = controller.handle(ServiceImpl1.MY_NUMBER);
+		assertEquals(MyAspect.PREFIX + ServiceImpl1.MY_RE, re);
+
+		re = controller.handle(12345);
+		assertEquals(MyAspect.PREFIX + ServiceImpl2.MY_RE, re);
+
+		re = controller.handle(new Float(5.0F));
+		assertEquals(MyAspect.PREFIX + ServiceImpl3.MY_RE, re);
+	}
+
+	@Test
+	public void testOnlyOneDependentImplementeeBeanCreated()
+	{
+		Controller controller = applicationContext.getBean(Controller.class);
+
+		Controller1 controller1 = applicationContext.getBean(Controller1.class);
+
+		assertTrue(controller1.getService() == controller.getService());
+	}
+
+	@Test
+	public void testNotInterfaceImplementeeBean()
+	{
+		TestNotInterfaceImplementeeBean.TNIController controller = applicationContext
+				.getBean(TestNotInterfaceImplementeeBean.TNIController.class);
+
+		assertTrue(controller.getService() instanceof CglibImplementee);
+	}
+
+	public static class TestNotInterfaceImplementeeBean
+	{
+		@Component
+		public static class TNIController
 		{
-			String re = controller.handle(new Byte((byte) 5));
+			private TNIService service;
 
-			Assert.assertEquals(TService0.MY_RE, re);
+			public TNIService getService()
+			{
+				return service;
+			}
+
+			@Autowired
+			public void setService(TNIService service)
+			{
+				this.service = service;
+			}
 		}
 
+		@Component
+		public static class TNIService
 		{
-			String re = controller.handle(TService1.MY_NUMBER);
 
-			Assert.assertEquals(TService1.MY_RE, re);
 		}
 
+		@Component
+		public static class TNIServiceAnother extends TNIService
 		{
-			String re = controller.handle(12345);
 
-			Assert.assertEquals(TService2.MY_RE, re);
+		}
+	}
+
+
+	@Test
+	public void testSetterMethodAutowired()
+	{
+		TestSetterMethodAutowired bean = applicationContext
+				.getBean(TestSetterMethodAutowired.class);
+
+		assertNotNull(bean.getService());
+	}
+
+	@Component
+	public static class TestSetterMethodAutowired
+	{
+		private Service service;
+
+		public Service getService()
+		{
+			return service;
 		}
 
+		@Autowired
+		public void setService(Service service)
 		{
-			String re = controller.handle(new Float(5.0F));
+			this.service = service;
+		}
+	}
 
-			Assert.assertEquals(TService3.MY_RE, re);
+	@Test
+	public void testFieldAutowired()
+	{
+		TestFieldAutowired bean = applicationContext
+				.getBean(TestFieldAutowired.class);
+
+		assertNotNull(bean.getService());
+	}
+
+	@Component
+	public static class TestFieldAutowired
+	{
+		@Autowired
+		private Service service;
+
+		public Service getService()
+		{
+			return service;
+		}
+	}
+
+	@Test
+	public void testNoXimplementationWhenOnlyOneInstance()
+	{
+		TestNoXimplementationWhenOnlyOneInstance.TNOController controller = applicationContext
+				.getBean(
+						TestNoXimplementationWhenOnlyOneInstance.TNOController.class);
+
+		assertEquals(TestNoXimplementationWhenOnlyOneInstance.TNOService.class,
+				controller.getService().getClass());
+
+		assertEquals(
+				TestNoXimplementationWhenOnlyOneInstance.TNOService1Impl.class,
+				controller.getService1().getClass());
+	}
+
+	public static class TestNoXimplementationWhenOnlyOneInstance
+	{
+		@Component
+		public static class TNOController
+		{
+			private TNOService service;
+
+			private TNOService1 service1;
+
+			public TNOService getService()
+			{
+				return service;
+			}
+
+			@Autowired
+			public void setService(TNOService service)
+			{
+				this.service = service;
+			}
+
+			public TNOService1 getService1()
+			{
+				return service1;
+			}
+
+			@Autowired
+			public void setService1(TNOService1 service1)
+			{
+				this.service1 = service1;
+			}
 		}
 
+		@Component
+		public static class TNOService
 		{
-			TController1 controller1 = applicationContext
-					.getBean(TController1.class);
 
-			Assert.assertTrue(
-					controller1.getTservice() == controller.getTservice());
+		}
+
+		public interface TNOService1
+		{
+		}
+
+		@Component
+		public static class TNOService1Impl implements TNOService1
+		{
 		}
 	}
 
 	@Component
-	public static class TController
+	public static class Controller
 	{
 		@Autowired
-		private TService tservice;
+		private Service service;
 
-		public TController()
+		public Controller()
 		{
 			super();
 		}
 
-		public TController(TService tservice)
+		public Controller(Service tservice)
 		{
 			super();
-			this.tservice = tservice;
+			this.service = tservice;
 		}
 
-		public TService getTservice()
+		public Service getService()
 		{
-			return tservice;
+			return service;
 		}
 
-		public void setTservice(TService tservice)
+		public void setService(Service service)
 		{
-			this.tservice = tservice;
+			this.service = service;
 		}
 
 		public String handle(Number number)
 		{
-			return this.tservice.handle(number);
+			return this.service.handle(number);
 		}
 	}
 
 	@Component
-	public static class TController1
+	public static class Controller1
 	{
 		@Autowired
-		private TService tservice;
+		private Service service;
 
-		public TController1()
+		public Controller1()
 		{
 			super();
 		}
 
-		public TService getTservice()
+		public Service getService()
 		{
-			return tservice;
+			return service;
 		}
 
-		public void setTservice(TService tservice)
+		public void setService(Service service)
 		{
-			this.tservice = tservice;
+			this.service = service;
 		}
 	}
 
 	@Component
-	public static interface TService
+	public static interface Service
 	{
 		String handle(Number number);
 	}
 
 	@Component
-	public static class TService0 implements TService
+	public static class ServiceImpl0 implements Service
 	{
-		public static final String MY_RE = "RE-TService0";
+		public static final String MY_RE = ServiceImpl0.class.getName();
 
 		@Override
 		public String handle(Number number)
@@ -164,9 +310,9 @@ public class ImplementeeBeanCreationPostProcessorTest
 	}
 
 	@Component
-	public static class TService1 implements TService
+	public static class ServiceImpl1 implements Service
 	{
-		public static final String MY_RE = "RE-TService1";
+		public static final String MY_RE = ServiceImpl1.class.getName();
 
 		public static final Number MY_NUMBER = new Double(1.0D);
 
@@ -184,10 +330,10 @@ public class ImplementeeBeanCreationPostProcessorTest
 	}
 
 	@Component
-	@Implementor(TService.class)
-	public static class TService2
+	@Implementor(Service.class)
+	public static class ServiceImpl2
 	{
-		public static final String MY_RE = "RE-TService2";
+		public static final String MY_RE = ServiceImpl2.class.getName();
 
 		@Implement("handle")
 		public String handle(Integer number)
@@ -197,10 +343,10 @@ public class ImplementeeBeanCreationPostProcessorTest
 	}
 
 	@Component
-	@Implementor(TService.class)
-	public static class TService3
+	@Implementor(Service.class)
+	public static class ServiceImpl3
 	{
-		public static final String MY_RE = "RE-TService3";
+		public static final String MY_RE = ServiceImpl3.class.getName();
 
 		@Implement("handle")
 		public String handle(Float number)
@@ -211,17 +357,27 @@ public class ImplementeeBeanCreationPostProcessorTest
 
 	@Component
 	@Aspect
-	public static class TAspect
+	public static class MyAspect
 	{
-		@Pointcut("execution(* *..*.TService.*(..))")
+		public static final String PREFIX = MyAspect.class.getSimpleName();
+
+		@Pointcut("execution(* *..*.Service.handle(..))")
 		private void testPointcut()
 		{
 		}
 
 		@org.aspectj.lang.annotation.Before("testPointcut()")
-		public void testAspect(JoinPoint jp) throws Throwable
+		public void beforeAspect(JoinPoint jp) throws Throwable
 		{
-			System.out.println("-------------test aspect---------------");
+			System.out.println("Before aspect execute");
+		}
+
+		@org.aspectj.lang.annotation.Around("testPointcut()")
+		public Object aroundAspect(ProceedingJoinPoint jp) throws Throwable
+		{
+			String re = (String) jp.proceed();
+
+			return PREFIX + re;
 		}
 	}
 }

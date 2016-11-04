@@ -32,9 +32,14 @@ import net.sf.cglib.proxy.InvocationHandler;
  * It creating <i>implementee</i> beans of new CGLIB class and can work with
  * Spring AOP.
  * </p>
+ * <p>
+ * Each <i>implementee</i> instance it created will implements the
+ * {@linkplain CglibImplementee} interface for token.
+ * </p>
  * 
  * @author earthangry@gmail.com
  * @date 2016-9-30
+ * @see CglibImplementee
  *
  */
 public class CglibImplementeeBeanBuilder implements ImplementeeBeanBuilder
@@ -82,6 +87,7 @@ public class CglibImplementeeBeanBuilder implements ImplementeeBeanBuilder
 				implementeeMethodInvocationFactory);
 
 		Enhancer enhancer = new Enhancer();
+		enhancer.setInterfaces(new Class[] { CglibImplementee.class });
 		enhancer.setSuperclass(implementation.getImplementee());
 		enhancer.setCallback(invocationHandler);
 

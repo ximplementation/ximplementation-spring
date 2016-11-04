@@ -67,9 +67,9 @@ import org.ximplementation.support.PreparedImplementorBeanFactory;
  * the following conditions:
  * </p>
  * <ul>
- * <li>The injected setter/getter method or field is annotated with
+ * <li>The injected setter method or field is annotated with
  * {@linkplain Autowired} or {@code javax.inject.Inject};</li>
- * <li>The injected setter/getter method or field is NOT annotated with
+ * <li>The injected setter method or field is NOT annotated with
  * {@linkplain Qualifier} or {@code javax.inject.Named}.</li>
  * <li>There are more than one <i>implementor</i>s for the injected type in the
  * Spring context.</li>
@@ -287,7 +287,7 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 			if (propertyType == null)
 				continue;
 
-			Set<Class<?>> implementors = this.implementorManager.getImplementors(propertyType);
+			Set<Class<?>> implementors = this.implementorManager.get(propertyType);
 
 			// only handle multiple implementors
 			if (implementors == null || implementors.size() <= 1)
@@ -342,16 +342,6 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 
 			if (autowiredAnno != null)
 				return writeMethod.getParameterTypes()[0];
-		}
-
-		// read method
-		Method readMethod = pd.getReadMethod();
-		if (readMethod != null && !isQualified(readMethod))
-		{
-			Annotation autowiredAnno = findAutowiredAnnotation(readMethod);
-
-			if (autowiredAnno != null)
-				return readMethod.getReturnType();
 		}
 
 		// Field
@@ -454,9 +444,13 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 			}
 
 			allBeanClasses[i] = eleBeanClass;
+
+			// Add itself, fix missing itself as an implementor when auto wired
+			// class is not abstract
+			implementorManager.addFor(eleBeanClass, eleBeanClass);
 		}
 
-		implementorManager.addImplementor(allBeanClasses);
+		implementorManager.add(allBeanClasses);
 	}
 
 	/**
