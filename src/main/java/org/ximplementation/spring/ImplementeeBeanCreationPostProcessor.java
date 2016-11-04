@@ -59,8 +59,9 @@ import org.ximplementation.support.PreparedImplementorBeanFactory;
  * </code>
  * </p>
  * <p>
- * to your {@code applicationContext.xml}, Spring will be able to support
- * multiple dependency injection and more <i>ximplementation</i> features.
+ * to the {@code applicationContext.xml}, your Spring project will be able to
+ * support multiple dependency injection and more <i>ximplementation</i>
+ * features.
  * </p>
  * <p>
  * This {@code BeanPostProcessor} will only handle dependencies matching all of
