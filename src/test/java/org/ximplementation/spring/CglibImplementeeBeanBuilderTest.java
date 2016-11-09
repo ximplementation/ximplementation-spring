@@ -22,7 +22,7 @@ import java.lang.reflect.Field;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.ximplementation.spring.CglibImplementeeBeanBuilder.CglibImplementeeBeanInvocationHandler;
+import org.ximplementation.spring.CglibImplementeeBeanBuilder.CglibImplementeeInvocationHandler;
 import org.ximplementation.support.Implementation;
 import org.ximplementation.support.ImplementationResolver;
 import org.ximplementation.support.ImplementorBeanFactory;
@@ -95,7 +95,7 @@ public class CglibImplementeeBeanBuilderTest
 
 		assertNotNull(callbackField);
 
-		CglibImplementeeBeanInvocationHandler callback = (CglibImplementeeBeanInvocationHandler) callbackField
+		CglibImplementeeInvocationHandler callback = (CglibImplementeeInvocationHandler) callbackField
 				.get(implementee);
 		
 		assertTrue(implementation == callback.getImplementation());
