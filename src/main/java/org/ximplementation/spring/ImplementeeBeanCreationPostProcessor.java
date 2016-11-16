@@ -39,11 +39,10 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessorAdapter;
 import org.springframework.core.Ordered;
 import org.springframework.core.PriorityOrdered;
+import org.ximplementation.spring.PreparedImplementorBeanHolderFactory.ImplementorBeanHolder;
 import org.ximplementation.support.Implementation;
 import org.ximplementation.support.ImplementationResolver;
 import org.ximplementation.support.ImplementeeBeanBuilder;
-import org.ximplementation.support.ImplementorManager;
-import org.ximplementation.support.PreparedImplementorBeanFactory;
 
 /**
  * A {@code BeanPostProcessor} for creating dependency beans based on
@@ -77,7 +76,7 @@ import org.ximplementation.support.PreparedImplementorBeanFactory;
  * </ul>
  * <p>
  * If matched, it will use the {@linkplain CglibImplementeeBeanBuilder} to
- * create a CGLIB <i>implementee</i> bean for dependency injection.
+ * create CGLIB <i>implementee</i> beans for dependency injection.
  * </p>
  * <p>
  * Examples :
@@ -127,10 +126,11 @@ import org.ximplementation.support.PreparedImplementorBeanFactory;
  * }
  * </pre>
  * <p>
- * The Controller.service will be injected successfully though there are more
- * than one instances, and its handle method invocation will be delegated to
- * ServiceImplInteger when the parameter type is Integer, to ServiceImplAnother
- * when the parameter is greater than 0, and to ServiceImplDefault otherwise.
+ * The {@code Controller.service} will be injected successfully though there are
+ * more than one instances, and its {@code handle} method invocation will be
+ * delegated to {@code ServiceImplInteger} when the parameter type is
+ * {@code Integer}, to {@code ServiceImplAnother} when the parameter is greater
+ * than 0, to {@code ServiceImplDefault} otherwise.
  * </p>
  * 
  * @author earthangry@gmail.com
@@ -140,7 +140,7 @@ import org.ximplementation.support.PreparedImplementorBeanFactory;
 public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBeanPostProcessorAdapter
 		implements PriorityOrdered, BeanFactoryAware
 {
-	private ImplementorManager implementorManager = new ImplementorManager();
+	private BeanNameImplementorManager beanNameImplementorManager = new BeanNameImplementorManager();
 
 	private ImplementationResolver implementationResolver = new ImplementationResolver();
 
@@ -157,7 +157,7 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 
 	private final Set<Class<? extends Annotation>> qualifierAnnotationTypes = new LinkedHashSet<Class<? extends Annotation>>();
 
-	private List<PreparedImplementorBeanFactory> preparedImplementorBeanFactories = new ArrayList<PreparedImplementorBeanFactory>();
+	private List<PreparedImplementorBeanHolderFactory> preparedImplementorBeanHolderFactories = new ArrayList<PreparedImplementorBeanHolderFactory>();
 
 	private Map<Class<?>, Object> initializedImplementeeBeans = new HashMap<Class<?>, Object>();
 
@@ -186,14 +186,15 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 		}
 	}
 
-	public ImplementorManager getImplementorManager()
+	public BeanNameImplementorManager getBeanNameImplementorManager()
 	{
-		return implementorManager;
+		return beanNameImplementorManager;
 	}
 
-	public void setImplementorManager(ImplementorManager implementorManager)
+	public void setBeanNameImplementorManager(
+			BeanNameImplementorManager beanNameImplementorManager)
 	{
-		this.implementorManager = implementorManager;
+		this.beanNameImplementorManager = beanNameImplementorManager;
 	}
 
 	public ImplementationResolver getImplementationResolver()
@@ -257,16 +258,25 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 			throw new IllegalArgumentException("ConfigurableListableBeanFactory required");
 
 		this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
-		this.inflateImplementorManager(implementorManager, this.beanFactory);
+		this.inflateBeanNameImplementorManager(beanNameImplementorManager,
+				this.beanFactory);
 	}
 
 	@Override
 	public boolean postProcessAfterInstantiation(Object bean, String beanName)
 			throws BeansException
 	{
-		for (PreparedImplementorBeanFactory PreparedImplementorBeanFactory : this.preparedImplementorBeanFactories)
+		BeanDefinition beanDefinition = this.beanFactory
+				.getBeanDefinition(beanName);
+
+		// only handle singleton beans
+		// prototype beans are handled in postProcessPropertyValues(...) method
+		if (!beanDefinition.isPrototype())
 		{
-			PreparedImplementorBeanFactory.addImplementorBean(bean);
+			for (PreparedImplementorBeanHolderFactory PreparedImplementorBeanHolderFactory : this.preparedImplementorBeanHolderFactories)
+			{
+				PreparedImplementorBeanHolderFactory.addImplementorBean(bean);
+			}
 		}
 
 		return super.postProcessAfterInstantiation(bean, beanName);
@@ -288,7 +298,8 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 			if (propertyType == null)
 				continue;
 
-			Set<Class<?>> implementors = this.implementorManager.get(propertyType);
+			Set<Class<?>> implementors = this.beanNameImplementorManager
+					.get(propertyType);
 
 			// only handle multiple implementors
 			if (implementors == null || implementors.size() <= 1)
@@ -302,15 +313,23 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 				Implementation<?> implementation = this.implementationResolver
 						.resolve(propertyType, implementors);
 
-				PreparedImplementorBeanFactory preparedImplementorBeanFactory = new PreparedImplementorBeanFactory(
+				PreparedImplementorBeanHolderFactory preparedImplementorBeanHolderFactory = new PreparedImplementorBeanHolderFactory(
 						implementation);
 
-				this.preparedImplementorBeanFactories
-						.add(preparedImplementorBeanFactory);
+				initImplementorBeanHoldersForPrototype(
+						preparedImplementorBeanHolderFactory,
+						beanNameImplementorManager, beanFactory);
+
+				this.preparedImplementorBeanHolderFactories
+						.add(preparedImplementorBeanHolderFactory);
 
 				implementeeBean = this.implementeeBeanBuilder
-						.build(implementation, preparedImplementorBeanFactory);
+						.build(implementation,
+								preparedImplementorBeanHolderFactory);
 
+				// AOP will be applied to this implementee bean, so the
+				// ImplementorBeanFactory must return the raw implementor beans,
+				// this is done in #postProcessAfterInstantiation() method above
 				implementeeBean = this.beanFactory.initializeBean(
 						implementeeBean, generateImplementeeBeanName(
 								propertyType, implementeeBean));
@@ -354,6 +373,43 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 		Annotation autowiredAnno = findAutowiredAnnotation(field);
 
 		return (autowiredAnno == null ? null : field.getType());
+	}
+
+	/**
+	 * Init {@linkplain ImplementorBeanHolder}s for prototype <i>implementor</i>
+	 * beans in given {@linkplain PreparedImplementorBeanHolderFactory}.
+	 * 
+	 * @param preparedImplementorBeanHolderFactory
+	 * @param beanNameImplementorManager
+	 * @param beanFactory
+	 */
+	protected void initImplementorBeanHoldersForPrototype(
+			PreparedImplementorBeanHolderFactory preparedImplementorBeanHolderFactory, BeanNameImplementorManager beanNameImplementorManager, ConfigurableListableBeanFactory beanFactory)
+	{
+		Set<Class<?>> implementors = preparedImplementorBeanHolderFactory
+				.getAllImplementors();
+		
+		for(Class<?> implementor : implementors)
+		{
+			String[] implementorBeanNames = beanNameImplementorManager
+					.getImplementorBeanNames(implementor);
+
+			for (String implementorBeanName : implementorBeanNames)
+			{
+				BeanDefinition beanDefinition = beanFactory
+						.getBeanDefinition(implementorBeanName);
+				
+				if(beanDefinition.isPrototype())
+				{
+					ImplementorBeanHolder implementorBeanHolder = new ImplementorBeanHolder(
+							implementor, beanFactory, implementorBeanName,
+							true);
+
+					preparedImplementorBeanHolderFactory
+							.addImplementorBeanHolder(implementorBeanHolder);
+				}
+			}
+		}
 	}
 
 	/**
@@ -413,45 +469,69 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 	}
 
 	/**
-	 * Inflate {@linkplain ImplementorManager}。
+	 * Inflate {@linkplain BeanNameImplementorManager}。
 	 * 
-	 * @param implementorManager
+	 * @param beanNameImplementorManager
 	 * @param beanFactory
 	 * @throws BeansException
 	 */
-	protected void inflateImplementorManager(ImplementorManager implementorManager,
+	protected void inflateBeanNameImplementorManager(
+			BeanNameImplementorManager beanNameImplementorManager,
 			ConfigurableListableBeanFactory beanFactory) throws BeansException
 	{
 		String[] allBeanNames = this.beanFactory.getBeanDefinitionNames();
 
 		Class<?>[] allBeanClasses = new Class<?>[allBeanNames.length];
 
+		Map<Class<?>, List<String>> implementorBeanNamesMap = new HashMap<Class<?>, List<String>>();
+
 		for (int i = 0; i < allBeanNames.length; i++)
 		{
-			String eleBeanName = allBeanNames[i];
-			Class<?> eleBeanClass;
+			String beanName = allBeanNames[i];
+			Class<?> beanClass;
 
-			BeanDefinition eleBeanDefinition = this.beanFactory.getBeanDefinition(eleBeanName);
-			String eleBeanClassName = eleBeanDefinition.getBeanClassName();
+			BeanDefinition beanDefinition = this.beanFactory
+					.getBeanDefinition(beanName);
+			String beanClassName = beanDefinition.getBeanClassName();
 
 			try
 			{
-				eleBeanClass = Class.forName(eleBeanClassName);
+				beanClass = Class.forName(beanClassName);
 			}
 			catch (ClassNotFoundException e)
 			{
-				throw new CannotLoadBeanClassException(eleBeanDefinition.getResourceDescription(), eleBeanName,
-						eleBeanClassName, e);
+				throw new CannotLoadBeanClassException(
+						beanDefinition.getResourceDescription(), beanName,
+						beanClassName, e);
 			}
 
-			allBeanClasses[i] = eleBeanClass;
+			allBeanClasses[i] = beanClass;
+
+			List<String> implementorBeanNames = implementorBeanNamesMap
+					.get(beanClass);
+			if (implementorBeanNames == null)
+			{
+				implementorBeanNames = new ArrayList<String>();
+				implementorBeanNamesMap.put(beanClass, implementorBeanNames);
+			}
+			implementorBeanNames.add(beanName);
 
 			// Add itself, fix missing itself as an implementor when auto wired
 			// class is not abstract
-			implementorManager.addFor(eleBeanClass, eleBeanClass);
+			beanNameImplementorManager.addFor(beanClass, beanClass);
 		}
 
-		implementorManager.add(allBeanClasses);
+		beanNameImplementorManager.add(allBeanClasses);
+
+		for (Class<?> implementor : implementorBeanNamesMap.keySet())
+		{
+			List<String> implementorBeanNames = implementorBeanNamesMap
+					.get(implementor);
+
+			beanNameImplementorManager.setImplementorBeanNames(implementor,
+					implementorBeanNames
+							.toArray(new String[implementorBeanNames.size()]));
+		}
 	}
 
 	/**

@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Scope;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.stereotype.Component;
 import org.ximplementation.Implement;
@@ -233,6 +234,164 @@ public class ImplementeeBeanCreationPostProcessorTest
 		@Component
 		public static class TNOService1Impl implements TNOService1
 		{
+		}
+	}
+
+	@Test
+	public void testPrototypeImplementorBean()
+	{
+		TestPrototypeImplementorBean.TPIController controller = applicationContext
+				.getBean(TestPrototypeImplementorBean.TPIController.class);
+
+		assertEquals(0, controller
+				.getCount(TestPrototypeImplementorBean.TPIService1.TYPE));
+		assertEquals(0, controller
+				.getCount(TestPrototypeImplementorBean.TPIService1.TYPE));
+		assertEquals(0, controller
+				.getCount(TestPrototypeImplementorBean.TPIService1.TYPE));
+
+		TestPrototypeImplementorBean.TPIService2.count = 0;
+
+		assertEquals(1, controller
+				.getCount(TestPrototypeImplementorBean.TPIService2.TYPE));
+		assertEquals(2, controller
+				.getCount(TestPrototypeImplementorBean.TPIService2.TYPE));
+		assertEquals(3, controller
+				.getCount(TestPrototypeImplementorBean.TPIService2.TYPE));
+
+		TestPrototypeImplementorBean.TPIService3.count = 0;
+
+		assertEquals(1, controller
+				.getCount(TestPrototypeImplementorBean.TPIService3.TYPE));
+		assertEquals(2, controller
+				.getCount(TestPrototypeImplementorBean.TPIService3.TYPE));
+		assertEquals(3, controller
+				.getCount(TestPrototypeImplementorBean.TPIService3.TYPE));
+	}
+
+	public static class TestPrototypeImplementorBean
+	{
+		@Component
+		public static class TPIController
+		{
+			@Autowired
+			private TPIService service;
+
+			public TPIService getService()
+			{
+				return service;
+			}
+
+			public void setService(TPIService service)
+			{
+				this.service = service;
+			}
+
+			public int getCount(String type)
+			{
+				return this.service.getCount(type);
+			}
+		}
+
+		public static interface TPIService
+		{
+			public int getCount(String type);
+		}
+
+		@Component
+		public static class TPIService1 implements TPIService
+		{
+			public static final String TYPE = TPIService1.class.getName();
+
+			private static int count = 0;
+
+			public TPIService1()
+			{
+				super();
+			}
+
+			@Validity("isValid")
+			@Override
+			public int getCount(String type)
+			{
+				return count;
+			}
+
+			boolean isValid(String type)
+			{
+				return TYPE.equals(type);
+			}
+		}
+
+		@Component
+		@Scope("prototype")
+		public static class TPIService2 implements TPIService
+		{
+			public static final String TYPE = TPIService2.class.getName();
+
+			private static int count = 0;
+
+			public TPIService2()
+			{
+				super();
+
+				count += 1;
+			}
+
+			@Validity("isValid")
+			@Override
+			public int getCount(String type)
+			{
+				return count;
+			}
+
+			boolean isValid(String type)
+			{
+				return TYPE.equals(type);
+			}
+		}
+
+		@Component
+		@Scope("prototype")
+		public static class TPIService3 implements TPIService
+		{
+			public static final String TYPE = TPIService3.class.getName();
+
+			private static int count = 0;
+
+			public TPIService3()
+			{
+				super();
+
+				count += 1;
+			}
+
+			@Validity("isValid")
+			@Override
+			public int getCount(String type)
+			{
+				return count;
+			}
+
+			boolean isValid(String type)
+			{
+				return TYPE.equals(type);
+			}
+		}
+
+		@Component
+		@Aspect
+		public static class TPIService3Aspect
+		{
+			@Pointcut("execution(* *..*.TPIService3.getCount(..))")
+			private void testPointcut()
+			{
+			}
+
+			@org.aspectj.lang.annotation.Before("testPointcut()")
+			public void beforeAspect(JoinPoint jp) throws Throwable
+			{
+			}
 		}
 	}
 
