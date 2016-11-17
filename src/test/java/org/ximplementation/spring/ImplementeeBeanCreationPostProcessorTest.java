@@ -240,6 +240,7 @@ public class ImplementeeBeanCreationPostProcessorTest
 	@Test
 	public void testPrototypeImplementorBean()
 	{
+		// singleton
 		TestPrototypeImplementorBean.TPIController controller = applicationContext
 				.getBean(TestPrototypeImplementorBean.TPIController.class);
 
@@ -250,8 +251,8 @@ public class ImplementeeBeanCreationPostProcessorTest
 		assertEquals(0, controller
 				.getCount(TestPrototypeImplementorBean.TPIService1.TYPE));
 
+		// raw prototype
 		TestPrototypeImplementorBean.TPIService2.count = 0;
-
 		assertEquals(1, controller
 				.getCount(TestPrototypeImplementorBean.TPIService2.TYPE));
 		assertEquals(2, controller
@@ -259,8 +260,8 @@ public class ImplementeeBeanCreationPostProcessorTest
 		assertEquals(3, controller
 				.getCount(TestPrototypeImplementorBean.TPIService2.TYPE));
 
+		// aop prototype
 		TestPrototypeImplementorBean.TPIService3.count = 0;
-
 		assertEquals(1, controller
 				.getCount(TestPrototypeImplementorBean.TPIService3.TYPE));
 		assertEquals(2, controller
