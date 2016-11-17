@@ -58,7 +58,7 @@ import org.ximplementation.support.ImplementeeBeanBuilder;
  * </code>
  * </p>
  * <p>
- * to the {@code applicationContext.xml}, your Spring project will be able to
+ * to {@code applicationContext.xml}, your Spring project will be able to
  * support multiple dependency injection and more <i>ximplementation</i>
  * features.
  * </p>
@@ -75,8 +75,8 @@ import org.ximplementation.support.ImplementeeBeanBuilder;
  * Spring context.</li>
  * </ul>
  * <p>
- * If matched, it will use the {@linkplain CglibImplementeeBeanBuilder} to
- * create CGLIB <i>implementee</i> beans for dependency injection.
+ * If matched, it will use {@linkplain CglibImplementeeBeanBuilder} to create
+ * CGLIB <i>implementee</i> beans for dependency injection.
  * </p>
  * <p>
  * Examples :
@@ -270,7 +270,9 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 				.getBeanDefinition(beanName);
 
 		// only handle singleton beans
-		// prototype beans are handled in postProcessPropertyValues(...) method
+		// prototype beans are handled by
+		// initImplementorBeanHoldersForPrototype(...) in
+		// postProcessPropertyValues(...) method
 		if (!beanDefinition.isPrototype())
 		{
 			for (PreparedImplementorBeanHolderFactory PreparedImplementorBeanHolderFactory : this.preparedImplementorBeanHolderFactories)
@@ -378,6 +380,11 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 	/**
 	 * Init {@linkplain ImplementorBeanHolder}s for prototype <i>implementor</i>
 	 * beans in given {@linkplain PreparedImplementorBeanHolderFactory}.
+	 * <p>
+	 * Prototype beans are different with singleton beans, they are created
+	 * every request, so must not be added in
+	 * {@linkplain #postProcessAfterInstantiation(Object, String)}
+	 * </p>
 	 * 
 	 * @param preparedImplementorBeanHolderFactory
 	 * @param beanNameImplementorManager

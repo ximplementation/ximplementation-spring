@@ -7,7 +7,7 @@ Simply add the following content
 
 `<bean class="org.ximplementation.spring.ImplementeeBeanCreationPostProcessor"/>`
 
-to your `applicationContext.xml`, then your Spring project will be able to support multiple dependency injection and more ximplementation features.
+to `applicationContext.xml`, then your Spring project will be able to support multiple dependency injection and more ximplementation features.
 
 ## Example
 You can write Spring components like this:
@@ -56,4 +56,4 @@ You can write Spring components like this:
 
 ```
 
-The `Controller.service` will be injected successfully though there are two instances, and its `handle` method invocation will be delegated to `ServiceImplInteger` when the parameter type is `Integer`, to `ServiceImplAnother` when the parameter is greater than `0`, and to `ServiceImplDefault` otherwise.
+The `Controller.service` will be injected successfully though there are two instances, and its `handle` method invocation will be delegated to `ServiceImplInteger` when the parameter type is `Integer`, to `ServiceImplAnother` when the parameter is greater than `0`, to `ServiceImplDefault` otherwise.
