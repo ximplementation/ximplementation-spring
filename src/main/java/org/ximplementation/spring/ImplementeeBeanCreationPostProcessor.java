@@ -277,7 +277,7 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 		{
 			for (PreparedImplementorBeanHolderFactory PreparedImplementorBeanHolderFactory : this.preparedImplementorBeanHolderFactories)
 			{
-				PreparedImplementorBeanHolderFactory.addImplementorBean(bean);
+				PreparedImplementorBeanHolderFactory.add(bean);
 			}
 		}
 
