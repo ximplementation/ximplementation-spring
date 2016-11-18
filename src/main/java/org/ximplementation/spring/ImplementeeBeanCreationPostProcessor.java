@@ -275,9 +275,9 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 		// postProcessPropertyValues(...) method
 		if (!beanDefinition.isPrototype())
 		{
-			for (PreparedImplementorBeanHolderFactory PreparedImplementorBeanHolderFactory : this.preparedImplementorBeanHolderFactories)
+			for (PreparedImplementorBeanHolderFactory preparedImplementorBeanHolderFactory : this.preparedImplementorBeanHolderFactories)
 			{
-				PreparedImplementorBeanHolderFactory.add(bean);
+				preparedImplementorBeanHolderFactory.add(bean);
 			}
 		}
 
