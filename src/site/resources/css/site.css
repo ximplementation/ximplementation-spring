@@ -1,0 +1,29 @@
+@CHARSET "UTF-8";
+
+body.topBarDisabled{
+	padding-top: inherit;
+}
+a.externalLink{
+	padding-right: inherit;
+}
+a.externalLink[href^="http"]{
+	background: none;
+	padding-right: inherit;
+}
+a.externalLink[href^="https"]{
+	background: none;
+	padding-right: inherit;
+}
+pre.prettyprint{
+	border: 1px solid #E3E3E3;
+	padding: 0.5em;
+}
+tt{
+	background-color: #F5F5F5;
+}
+hr{
+	margin: 10px 0;
+}
+footer{
+	margin-bottom: 10px;
+}

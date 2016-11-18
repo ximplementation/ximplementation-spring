@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+	<skin>
+		<groupId>org.apache.maven.skins</groupId>
+		<artifactId>maven-fluido-skin</artifactId>
+		<version>1.5</version>
+	</skin>
+	<body>
+		<menu>
+			<item name="Introduction" href="index.html"/>
+			<item name="Getting Started" href="getting-started.html" />
+			<item name="Manual" href="manual.html" />
+			<item name="API" href="apidocs/index.html"/>
+		</menu>
+		<footer>
+			&lt;a href="index.html"&gt;Introduction&lt;/a&gt; -
+			&lt;a href="getting-started.html"&gt;Getting Started&lt;/a&gt; -
+			&lt;a href="manual.html"&gt;Manual&lt;/a&gt; -
+			&lt;a href="apidocs/index.html"&gt;API&lt;/a&gt;
+		</footer>
+	</body>
+</project>

@@ -1,7 +1,5 @@
-# ximplementation-spring
-Ximplementation-spring lets you use ximplementation in Spring.
-
-The class `org.ximplementation.spring.ImplementeeBeanCreationPostProcessor` is a Spring `BeanPostProcessor` for creating ximplementation beans.
+#Getting started
+Ximplementation-spring has a core Spring `BeanPostProcessor` class `org.ximplementation.spring.ImplementeeBeanCreationPostProcessor`, it is used for creating <i>ximplementation</i> Spring beans.
 
 Simply add the following content
 
@@ -11,8 +9,6 @@ to `applicationContext.xml`, then your Spring project will be able to support mu
 
 ## Example
 You can write Spring components like this:
-
-```java
 
 	@Component
 	public class Controller
@@ -53,7 +49,5 @@ You can write Spring components like this:
 		@Implement
 		public String handle(Integer number){...}
 	}
-
-```
 
 The `Controller.service` will be injected successfully though there are two instances, and its `handle` method invocation will be delegated to `ServiceImplInteger` when the parameter type is `Integer`, to `ServiceImplAnother` when the parameter is greater than `0`, to `ServiceImplDefault` otherwise.
