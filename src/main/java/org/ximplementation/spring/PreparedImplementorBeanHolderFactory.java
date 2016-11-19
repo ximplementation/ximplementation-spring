@@ -125,7 +125,15 @@ public class PreparedImplementorBeanHolderFactory
 	{
 		public static final String JdkDynamicAopProxyName = "org.springframework.aop.framework.JdkDynamicAopProxy";
 		
+		public static final String Cglib2AopProxyName = "org.springframework.aop.framework.Cglib2AopProxy";
+		
+		public static final String JdkDynamicAopProxyAdvisedSupportFieldName = "advised";
+
+		public static final String Cglib2AopProxyAdvisedSupportFieldName = "advised";
+
 		protected static volatile Field springJdkProxyAdvisedField = null;
+
+		protected static volatile Field cglib2AopProxyNameAdvisedField = null;
 
 		private Class<?> implementor;
 
@@ -246,8 +254,12 @@ public class PreparedImplementorBeanHolderFactory
 			if (!peel)
 				return bean;
 
+			// JDK Proxy
 			if (bean instanceof Proxy)
 				bean = peelSpringJdkProxy((Proxy) bean);
+			// CGLIB Proxy
+			else if (bean instanceof net.sf.cglib.proxy.Proxy)
+				bean = peelSpringCglibProxy((net.sf.cglib.proxy.Proxy) bean);
 
 			return bean;
 		}
@@ -255,22 +267,22 @@ public class PreparedImplementorBeanHolderFactory
 		/**
 		 * Peel Spring JDK proxy object.
 		 * 
-		 * @param springProxy
+		 * @param jdkProxy
 		 * @return The not proxied raw bean object
 		 * @throws PeelSpringProxyException
 		 */
-		protected Object peelSpringJdkProxy(Proxy springProxy)
+		protected Object peelSpringJdkProxy(Proxy jdkProxy)
 				throws PeelSpringProxyException
 		{
 			InvocationHandler invocationHandler = Proxy
-					.getInvocationHandler(springProxy);
+					.getInvocationHandler(jdkProxy);
 
 			Class<?> invocationHandlerClass = invocationHandler.getClass();
 
 			if (!JdkDynamicAopProxyName
 					.equals(invocationHandlerClass.getName()))
 				throw new PeelSpringProxyException(
-						"Peeling is not supported, Proxy [" + springProxy
+						"Peeling is not supported, Proxy [" + jdkProxy
 								+ "] is not created by ["
 								+ JdkDynamicAopProxyName + "]");
 
@@ -279,7 +291,8 @@ public class PreparedImplementorBeanHolderFactory
 				if (springJdkProxyAdvisedField == null)
 				{
 					springJdkProxyAdvisedField = invocationHandlerClass
-							.getDeclaredField("advised");
+							.getDeclaredField(
+									JdkDynamicAopProxyAdvisedSupportFieldName);
 
 					if (!springJdkProxyAdvisedField.isAccessible())
 						springJdkProxyAdvisedField.setAccessible(true);
@@ -294,7 +307,52 @@ public class PreparedImplementorBeanHolderFactory
 			{
 				throw new PeelSpringProxyException(e);
 			}
+		}
 
+		/**
+		 * Peel Spring CGLIB proxy object.
+		 * 
+		 * @param cglibProxy
+		 * @return The not proxied raw bean object
+		 * @throws PeelSpringProxyException
+		 */
+		protected Object peelSpringCglibProxy(
+				net.sf.cglib.proxy.Proxy cglibProxy)
+				throws PeelSpringProxyException
+		{
+			net.sf.cglib.proxy.InvocationHandler invocationHandler = net.sf.cglib.proxy.Proxy
+					.getInvocationHandler(cglibProxy);
+
+			Class<?> invocationHandlerClass = invocationHandler.getClass();
+
+			if (!Cglib2AopProxyName
+					.equals(invocationHandlerClass.getName()))
+				throw new PeelSpringProxyException(
+						"Peeling is not supported, Proxy [" + cglibProxy
+								+ "] is not created by ["
+								+ Cglib2AopProxyName + "]");
+
+			try
+			{
+				if (cglib2AopProxyNameAdvisedField == null)
+				{
+					cglib2AopProxyNameAdvisedField = invocationHandlerClass
+							.getDeclaredField(
+									Cglib2AopProxyAdvisedSupportFieldName);
+
+					if (!cglib2AopProxyNameAdvisedField.isAccessible())
+						cglib2AopProxyNameAdvisedField.setAccessible(true);
+				}
+
+				AdvisedSupport advisedSupport = (AdvisedSupport) cglib2AopProxyNameAdvisedField
+						.get(invocationHandler);
+
+				return advisedSupport.getTargetSource().getTarget();
+			}
+			catch (Exception e)
+			{
+				throw new PeelSpringProxyException(e);
+			}
 		}
 	}
 }

@@ -240,10 +240,10 @@ public class ImplementeeBeanCreationPostProcessorTest
 	@Test
 	public void testPrototypeImplementorBean()
 	{
-		// singleton
 		TestPrototypeImplementorBean.TPIController controller = applicationContext
 				.getBean(TestPrototypeImplementorBean.TPIController.class);
 
+		// singleton
 		assertEquals(0, controller
 				.getCount(TestPrototypeImplementorBean.TPIService1.TYPE));
 		assertEquals(0, controller
@@ -251,7 +251,7 @@ public class ImplementeeBeanCreationPostProcessorTest
 		assertEquals(0, controller
 				.getCount(TestPrototypeImplementorBean.TPIService1.TYPE));
 
-		// raw prototype
+		// prototype
 		TestPrototypeImplementorBean.TPIService2.count = 0;
 		assertEquals(1, controller
 				.getCount(TestPrototypeImplementorBean.TPIService2.TYPE));
@@ -259,15 +259,6 @@ public class ImplementeeBeanCreationPostProcessorTest
 				.getCount(TestPrototypeImplementorBean.TPIService2.TYPE));
 		assertEquals(3, controller
 				.getCount(TestPrototypeImplementorBean.TPIService2.TYPE));
-
-		// aop prototype
-		TestPrototypeImplementorBean.TPIService3.count = 0;
-		assertEquals(1, controller
-				.getCount(TestPrototypeImplementorBean.TPIService3.TYPE));
-		assertEquals(2, controller
-				.getCount(TestPrototypeImplementorBean.TPIService3.TYPE));
-		assertEquals(3, controller
-				.getCount(TestPrototypeImplementorBean.TPIService3.TYPE));
 	}
 
 	public static class TestPrototypeImplementorBean
@@ -351,16 +342,103 @@ public class ImplementeeBeanCreationPostProcessorTest
 				return TYPE.equals(type);
 			}
 		}
+	}
+
+	@Test
+	public void testPrototypeImplementorBean_AopOfJdkProxy()
+	{
+		// singleton
+		TestPrototypeImplementorBean_AopOfJdkProxy.TPIController controller = applicationContext
+				.getBean(
+						TestPrototypeImplementorBean_AopOfJdkProxy.TPIController.class);
+
+		TestPrototypeImplementorBean_AopOfJdkProxy.TPIService service = controller
+				.getService();
+
+		// singleton
+		assertEquals(0, controller
+				.getCount(
+						TestPrototypeImplementorBean_AopOfJdkProxy.TPIService1.TYPE));
+		assertEquals(0, controller
+				.getCount(
+						TestPrototypeImplementorBean_AopOfJdkProxy.TPIService1.TYPE));
+		assertEquals(0, controller
+				.getCount(
+						TestPrototypeImplementorBean_AopOfJdkProxy.TPIService1.TYPE));
+
+		// AOP Jdk Proxy
+		TestPrototypeImplementorBean_AopOfJdkProxy.TPIService2.count = 0;
+		assertEquals(1, controller.getCount(
+				TestPrototypeImplementorBean_AopOfJdkProxy.TPIService2.TYPE));
+		assertEquals(2, controller.getCount(
+				TestPrototypeImplementorBean_AopOfJdkProxy.TPIService2.TYPE));
+		assertEquals(3, controller.getCount(
+				TestPrototypeImplementorBean_AopOfJdkProxy.TPIService2.TYPE));
+	}
+
+	public static class TestPrototypeImplementorBean_AopOfJdkProxy
+	{
+		@Component
+		public static class TPIController
+		{
+			@Autowired
+			private TPIService service;
+
+			public TPIService getService()
+			{
+				return service;
+			}
+
+			public void setService(TPIService service)
+			{
+				this.service = service;
+			}
+
+			public int getCount(String type)
+			{
+				return this.service.getCount(type);
+			}
+		}
+
+		public static interface TPIService
+		{
+			public int getCount(String type);
+		}
 
 		@Component
-		@Scope("prototype")
-		public static class TPIService3 implements TPIService
+		public static class TPIService1 implements TPIService
 		{
-			public static final String TYPE = TPIService3.class.getName();
+			public static final String TYPE = TPIService1.class.getName();
 
 			private static int count = 0;
 
-			public TPIService3()
+			public TPIService1()
+			{
+				super();
+			}
+
+			@Validity("isValid")
+			@Override
+			public int getCount(String type)
+			{
+				return count;
+			}
+
+			boolean isValid(String type)
+			{
+				return TYPE.equals(type);
+			}
+		}
+
+		@Component
+		@Scope("prototype")
+		public static class TPIService2 implements TPIService
+		{
+			public static final String TYPE = TPIService2.class.getName();
+
+			private static int count = 0;
+
+			public TPIService2()
 			{
 				super();
 
@@ -384,7 +462,7 @@ public class ImplementeeBeanCreationPostProcessorTest
 		@Aspect
 		public static class TPIService3Aspect
 		{
-			@Pointcut("execution(* *..*.TPIService3.getCount(..))")
+			@Pointcut("execution(* org.ximplementation.spring.ImplementeeBeanCreationPostProcessorTest$TestPrototypeImplementorBean_AopOfJdkProxy$TPIService.getCount(..))")
 			private void testPointcut()
 			{
 			}
@@ -521,7 +599,7 @@ public class ImplementeeBeanCreationPostProcessorTest
 	{
 		public static final String PREFIX = MyAspect.class.getSimpleName();
 
-		@Pointcut("execution(* *..*.Service.handle(..))")
+		@Pointcut("execution(* org.ximplementation.spring.ImplementeeBeanCreationPostProcessorTest$Service.handle(..))")
 		private void testPointcut()
 		{
 		}
