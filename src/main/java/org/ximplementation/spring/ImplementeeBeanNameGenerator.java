@@ -27,8 +27,7 @@ public interface ImplementeeBeanNameGenerator
 	 * Generate the name of <i>implementee</i> bean.
 	 * 
 	 * @param implementee
-	 * @param implementeeBean
 	 * @return
 	 */
-	String generate(Class<?> implementee, Object implementeeBean);
+	String generate(Class<?> implementee);
 }

@@ -29,11 +29,10 @@ public class ClassNameImplementeeBeanNameGenerator
 	 * Generate the name of <i>implementee</i> bean.
 	 * 
 	 * @param implementee
-	 * @param implementeeBean
 	 * @return
 	 */
 	@Override
-	public String generate(Class<?> implementee, Object implementeeBean)
+	public String generate(Class<?> implementee)
 	{
 		return implementee.getName();
 	}
