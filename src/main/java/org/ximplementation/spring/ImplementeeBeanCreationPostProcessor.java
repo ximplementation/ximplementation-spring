@@ -39,7 +39,6 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessorAdapter;
 import org.springframework.core.Ordered;
 import org.springframework.core.PriorityOrdered;
-import org.ximplementation.spring.PreparedImplementorBeanHolderFactory.ImplementorBeanHolder;
 import org.ximplementation.support.Implementation;
 import org.ximplementation.support.ImplementationResolver;
 import org.ximplementation.support.ImplementeeBeanBuilder;
@@ -274,7 +273,7 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 
 		// only handle singleton beans
 		// prototype beans are handled by
-		// initImplementorBeanHoldersForPrototype(...) in
+		// createImplementorBeanHoldersForPrototype(...) in
 		// postProcessPropertyValues(...) method
 		if (beanDefinition.isSingleton())
 		{
@@ -487,7 +486,7 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 							true);
 
 					preparedImplementorBeanHolderFactory
-							.addImplementorBeanHolder(implementorBeanHolder);
+							.add(implementor, implementorBeanHolder);
 				}
 			}
 		}

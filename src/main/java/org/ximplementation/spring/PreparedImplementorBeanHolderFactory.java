@@ -14,16 +14,11 @@
 
 package org.ximplementation.spring;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import org.springframework.aop.framework.AdvisedSupport;
-import org.springframework.beans.factory.BeanFactory;
 import org.ximplementation.support.Implementation;
 import org.ximplementation.support.PreparedImplementorBeanFactory;
 
@@ -37,11 +32,16 @@ import org.ximplementation.support.PreparedImplementorBeanFactory;
  * 
  * @author earthangry@gmail.com
  * @date 2016-11-10
- *
+ * @see ImplementorBeanHolder
  */
 public class PreparedImplementorBeanHolderFactory
 		extends PreparedImplementorBeanFactory
 {
+	public PreparedImplementorBeanHolderFactory()
+	{
+		super();
+	}
+
 	public PreparedImplementorBeanHolderFactory(
 			Implementation<?> implementation)
 	{
@@ -51,40 +51,6 @@ public class PreparedImplementorBeanHolderFactory
 	public PreparedImplementorBeanHolderFactory(Set<Class<?>> implementors)
 	{
 		super(implementors);
-	}
-
-	/**
-	 * Return if the given {@linkplain ImplementorBeanHolder} is acceptable.
-	 * 
-	 * @param implementorBeanHolder
-	 *            The {@linkplain ImplementorBeanHolder} to be checked.
-	 * @return {@code true} if yes, {@code false} if no.
-	 */
-	public boolean accept(ImplementorBeanHolder implementorBeanHolder)
-	{
-		return super.accept(implementorBeanHolder.getImplementor());
-	}
-
-	/**
-	 * Add an {@linkplain ImplementorBeanHolder}.
-	 * 
-	 * @param implementorBeanHolder
-	 *            The {@linkplain ImplementorBeanHolder} to be added.
-	 * @return {@code true} if the {@linkplain ImplementorBeanHolder} is
-	 *         acceptable, {@code false} if not.
-	 */
-	public boolean addImplementorBeanHolder(
-			ImplementorBeanHolder implementorBeanHolder)
-	{
-		List<Object> implementorBeans = getImplementorBeansList(
-				implementorBeanHolder.getImplementor());
-
-		if (implementorBeans == null)
-			return false;
-
-		implementorBeans.add(implementorBeanHolder);
-
-		return true;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -107,252 +73,5 @@ public class PreparedImplementorBeanHolderFactory
 		}
 
 		return (Collection<T>) re;
-	}
-
-	/**
-	 * Holder for <i>implementor</i> bean.
-	 * <p>
-	 * Each call on {@linkplain #getBean()} method will call the
-	 * {@linkplain #getBeanFactory()}'s {@linkplain BeanFactory#getBean(String)}
-	 * method to return a bean.
-	 * </p>
-	 * 
-	 * @author earthangry@gmail.com
-	 * @date 2016-11-10
-	 *
-	 */
-	public static class ImplementorBeanHolder
-	{
-		public static final String JdkDynamicAopProxyName = "org.springframework.aop.framework.JdkDynamicAopProxy";
-		
-		public static final String Cglib2AopProxyName = "org.springframework.aop.framework.Cglib2AopProxy";
-		
-		public static final String JdkDynamicAopProxyAdvisedSupportFieldName = "advised";
-
-		public static final String Cglib2AopProxyAdvisedSupportFieldName = "advised";
-
-		protected static volatile Field springJdkProxyAdvisedField = null;
-
-		protected static volatile Field cglib2AopProxyNameAdvisedField = null;
-
-		private Class<?> implementor;
-
-		private BeanFactory beanFactory;
-
-		private String beanName;
-
-		private boolean peel;
-
-		public ImplementorBeanHolder()
-		{
-			super();
-		}
-
-		public ImplementorBeanHolder(Class<?> implementor,
-				BeanFactory beanFactory, String beanName, boolean peel)
-		{
-			super();
-			this.implementor = implementor;
-			this.beanFactory = beanFactory;
-			this.beanName = beanName;
-			this.peel = peel;
-		}
-
-		/**
-		 * Get the holding <i>implementor</i>.
-		 * 
-		 * @return
-		 */
-		public Class<?> getImplementor()
-		{
-			return implementor;
-		}
-
-		/**
-		 * Set the holding <i>implementor</i>.
-		 * 
-		 * @param implementor
-		 */
-		public void setImplementor(Class<?> implementor)
-		{
-			this.implementor = implementor;
-		}
-
-		/**
-		 * Get the {@linkplain BeanFactory}.
-		 * 
-		 * @return
-		 */
-		public BeanFactory getBeanFactory()
-		{
-			return beanFactory;
-		}
-
-		/**
-		 * Set the {@linkplain BeanFactory}.
-		 * 
-		 * @param beanFactory
-		 */
-		public void setBeanFactory(BeanFactory beanFactory)
-		{
-			this.beanFactory = beanFactory;
-		}
-
-		/**
-		 * Get the holding <i>implementor</i> bean name.
-		 * 
-		 * @return
-		 */
-		public String getBeanName()
-		{
-			return beanName;
-		}
-
-		/**
-		 * Set the holding <i>implementor</i> bean name.
-		 * 
-		 * @param beanName
-		 */
-		public void setBeanName(String beanName)
-		{
-			this.beanName = beanName;
-		}
-
-		/**
-		 * Return if {@linkplain #getBean()} should peel proxy bean to return
-		 * the raw bean.
-		 * 
-		 * @return {@code true} if yes, {@code false} if no.
-		 */
-		public boolean isPeel()
-		{
-			return peel;
-		}
-
-		/**
-		 * Set if {@linkplain #getBean()} should peel proxy bean to return the
-		 * raw bean.
-		 * 
-		 * @param peel
-		 *            {@code true} if yes, {@code false} if no.
-		 */
-		public void setPeel(boolean peel)
-		{
-			this.peel = peel;
-		}
-
-		/**
-		 * Get bean from the underline {@linkplain #getBeanFactory()
-		 * BeanFactory}.
-		 * 
-		 * @return
-		 */
-		public Object getBean()
-		{
-			Object bean = this.beanFactory.getBean(this.beanName);
-
-			if (!peel)
-				return bean;
-
-			// JDK Proxy
-			if (bean instanceof Proxy)
-				bean = peelSpringJdkProxy((Proxy) bean);
-			// CGLIB Proxy
-			else if (bean instanceof net.sf.cglib.proxy.Proxy)
-				bean = peelSpringCglibProxy((net.sf.cglib.proxy.Proxy) bean);
-
-			return bean;
-		}
-
-		/**
-		 * Peel Spring JDK proxy object.
-		 * 
-		 * @param jdkProxy
-		 * @return The not proxied raw bean object
-		 * @throws PeelSpringProxyException
-		 */
-		protected Object peelSpringJdkProxy(Proxy jdkProxy)
-				throws PeelSpringProxyException
-		{
-			InvocationHandler invocationHandler = Proxy
-					.getInvocationHandler(jdkProxy);
-
-			Class<?> invocationHandlerClass = invocationHandler.getClass();
-
-			if (!JdkDynamicAopProxyName
-					.equals(invocationHandlerClass.getName()))
-				throw new PeelSpringProxyException(
-						"Peeling is not supported, Proxy [" + jdkProxy
-								+ "] is not created by ["
-								+ JdkDynamicAopProxyName + "]");
-
-			try
-			{
-				if (springJdkProxyAdvisedField == null)
-				{
-					springJdkProxyAdvisedField = invocationHandlerClass
-							.getDeclaredField(
-									JdkDynamicAopProxyAdvisedSupportFieldName);
-
-					if (!springJdkProxyAdvisedField.isAccessible())
-						springJdkProxyAdvisedField.setAccessible(true);
-				}
-
-				AdvisedSupport advisedSupport = (AdvisedSupport) springJdkProxyAdvisedField
-						.get(invocationHandler);
-
-				return advisedSupport.getTargetSource().getTarget();
-			}
-			catch (Exception e)
-			{
-				throw new PeelSpringProxyException(e);
-			}
-		}
-
-		/**
-		 * Peel Spring CGLIB proxy object.
-		 * 
-		 * @param cglibProxy
-		 * @return The not proxied raw bean object
-		 * @throws PeelSpringProxyException
-		 */
-		protected Object peelSpringCglibProxy(
-				net.sf.cglib.proxy.Proxy cglibProxy)
-				throws PeelSpringProxyException
-		{
-			net.sf.cglib.proxy.InvocationHandler invocationHandler = net.sf.cglib.proxy.Proxy
-					.getInvocationHandler(cglibProxy);
-
-			Class<?> invocationHandlerClass = invocationHandler.getClass();
-
-			if (!Cglib2AopProxyName
-					.equals(invocationHandlerClass.getName()))
-				throw new PeelSpringProxyException(
-						"Peeling is not supported, Proxy [" + cglibProxy
-								+ "] is not created by ["
-								+ Cglib2AopProxyName + "]");
-
-			try
-			{
-				if (cglib2AopProxyNameAdvisedField == null)
-				{
-					cglib2AopProxyNameAdvisedField = invocationHandlerClass
-							.getDeclaredField(
-									Cglib2AopProxyAdvisedSupportFieldName);
-
-					if (!cglib2AopProxyNameAdvisedField.isAccessible())
-						cglib2AopProxyNameAdvisedField.setAccessible(true);
-				}
-
-				AdvisedSupport advisedSupport = (AdvisedSupport) cglib2AopProxyNameAdvisedField
-						.get(invocationHandler);
-
-				return advisedSupport.getTargetSource().getTarget();
-			}
-			catch (Exception e)
-			{
-				throw new PeelSpringProxyException(e);
-			}
-		}
 	}
 }

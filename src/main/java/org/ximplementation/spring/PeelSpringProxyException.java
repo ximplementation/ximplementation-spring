@@ -14,8 +14,6 @@
 
 package org.ximplementation.spring;
 
-import org.ximplementation.spring.PreparedImplementorBeanHolderFactory.ImplementorBeanHolder;
-
 /**
  * Peel Spring proxy exception in {@linkplain ImplementorBeanHolder}.
  * 
