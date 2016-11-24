@@ -23,9 +23,11 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.PropertyValues;
@@ -146,8 +148,6 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 
 	private ImplementeeBeanBuilder implementeeBeanBuilder = new CglibImplementeeBeanBuilder();
 
-	private ImplementeeBeanNameGenerator implementeeBeanNameGenerator = new ClassNameImplementeeBeanNameGenerator();
-
 	/** order, must be before AutowiredAnnotationBeanPostProcessor */
 	private int order = Ordered.HIGHEST_PRECEDENCE;
 
@@ -155,15 +155,30 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 
 	private Map<Class<?>, List<String>> implementorBeanNamesMap = new HashMap<Class<?>, List<String>>();
 
-	private Map<Class<?>, Object> initializedImplementeeBeans = new HashMap<Class<?>, Object>();
+	/**
+	 * stores implmentee beans created for specified type in
+	 * {@link #postProcessPropertyValues(PropertyValues, PropertyDescriptor[], Object, String)}
+	 * , used for all afterwards dependency injections.
+	 */
+	private ConcurrentHashMap<Class<?>, Object> initializedImplementeeBeans = new ConcurrentHashMap<Class<?>, Object>();
 
+	/**
+	 * stores raw singleton beans passed in
+	 * {@link #postProcessAfterInstantiation(Object, String)}.
+	 */
+	private List<Object> rawSingletonBeans = new LinkedList<Object>();
+
+	/**
+	 * stores all PreparedImplementorBeanHolderFactorys created in
+	 * {@link #postProcessPropertyValues(PropertyValues, PropertyDescriptor[], Object, String)}
+	 * , which will be update in
+	 * {@link #postProcessAfterInstantiation(Object, String)}.
+	 */
 	private List<PreparedImplementorBeanHolderFactory> preparedImplementorBeanHolderFactories = new ArrayList<PreparedImplementorBeanHolderFactory>();
 
 	private final Set<Class<? extends Annotation>> autowiredAnnotationTypes = new LinkedHashSet<Class<? extends Annotation>>();
 
 	private final Set<Class<? extends Annotation>> qualifierAnnotationTypes = new LinkedHashSet<Class<? extends Annotation>>();
-
-	private final Object resourceLock = new Object();
 
 	@SuppressWarnings("unchecked")
 	public ImplementeeBeanCreationPostProcessor()
@@ -222,17 +237,6 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 		this.implementeeBeanBuilder = implementeeBeanBuilder;
 	}
 
-	public ImplementeeBeanNameGenerator getImplementeeBeanNameGenerator()
-	{
-		return implementeeBeanNameGenerator;
-	}
-
-	public void setImplementeeBeanNameGenerator(
-			ImplementeeBeanNameGenerator implementeeBeanNameGenerator)
-	{
-		this.implementeeBeanNameGenerator = implementeeBeanNameGenerator;
-	}
-
 	public Set<Class<? extends Annotation>> getAutowiredAnnotationTypes()
 	{
 		return autowiredAnnotationTypes;
@@ -273,12 +277,14 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 
 		// only handle singleton beans
 		// prototype beans are handled by
-		// createImplementorBeanHoldersForPrototype(...) in
+		// initImplementorBeansForPrototype(...) in
 		// postProcessPropertyValues(...) method
 		if (beanDefinition.isSingleton())
 		{
-			synchronized (this.resourceLock)
+			synchronized (this.preparedImplementorBeanHolderFactories)
 			{
+				this.rawSingletonBeans.add(bean);
+
 				for (PreparedImplementorBeanHolderFactory preparedImplementorBeanHolderFactory : this.preparedImplementorBeanHolderFactories)
 				{
 					preparedImplementorBeanHolderFactory.add(bean);
@@ -313,49 +319,50 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 			// only handle multiple implementors
 			if (implementors == null || implementors.size() <= 1)
 				continue;
-
-			String implementeeBeanName = generateImplementeeBeanName(
-					propertyType);
 			
-			// beanFactory.initializeBean(...) will be called bellow, this
-			// method and #postProcessAfterInstantiation(...) may be
-			// called recursively, so it is better to use only one monitor to
-			// prevent from deadlock
-			synchronized (this.resourceLock)
+			Object implementeeBean = this.initializedImplementeeBeans
+					.get(propertyType);
+
+			if (implementeeBean == null)
 			{
-				Object implementeeBean = this.initializedImplementeeBeans
-						.get(propertyType);
+				Implementation<?> implementation = this.implementationResolver
+						.resolve(propertyType, implementors);
 
-				if (implementeeBean == null)
+				PreparedImplementorBeanHolderFactory preparedImplementorBeanHolderFactory = new PreparedImplementorBeanHolderFactory(
+						implementation);
+
+				implementeeBean = this.implementeeBeanBuilder.build(
+						implementation, preparedImplementorBeanHolderFactory);
+
+				// AOP will be applied to this implementee bean, so the
+				// ImplementorBeanFactory must return the raw implementor
+				// beans, this is done in #postProcessAfterInstantiation()
+				// method above
+				implementeeBean = this.beanFactory
+						.initializeBean(implementeeBean, generateImplementeeBeanName(propertyType));
+
+				Object previous = this.initializedImplementeeBeans.putIfAbsent(propertyType, implementeeBean);
+				
+				// put by my thread, then do initialization
+				if (previous == null || implementeeBean == previous)
 				{
-					Implementation<?> implementation = this.implementationResolver
-							.resolve(propertyType, implementors);
-
-					PreparedImplementorBeanHolderFactory preparedImplementorBeanHolderFactory = new PreparedImplementorBeanHolderFactory(
-							implementation);
-
-					createImplementorBeanHoldersForPrototype(
+					initImplementorBeansForPrototype(
 							preparedImplementorBeanHolderFactory);
 
-					this.preparedImplementorBeanHolderFactories
-							.add(preparedImplementorBeanHolderFactory);
+					synchronized (this.preparedImplementorBeanHolderFactories)
+					{
+						initImplementorBeansForSingleton(
+								preparedImplementorBeanHolderFactory);
 
-					implementeeBean = this.implementeeBeanBuilder.build(
-							implementation,
-							preparedImplementorBeanHolderFactory);
+						this.preparedImplementorBeanHolderFactories
+								.add(preparedImplementorBeanHolderFactory);
+					}
 
-					// AOP will be applied to this implementee bean, so the
-					// ImplementorBeanFactory must return the raw implementor
-					// beans, this is done in #postProcessAfterInstantiation()
-					// method above
-					implementeeBean = this.beanFactory.initializeBean(
-							implementeeBean, implementeeBeanName);
-
-					this.initializedImplementeeBeans.put(propertyType,
-							implementeeBean);
 					this.beanFactory.registerResolvableDependency(propertyType,
 							implementeeBean);
 				}
+				else
+					implementeeBean = previous;
 			}
 		}
 
@@ -449,7 +456,28 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 	}
 
 	/**
-	 * Create {@linkplain ImplementorBeanHolder}s for prototype
+	 * Initialize {@linkplain ImplementorBeanHolder}s for singleton
+	 * <i>implementor</i> beans in given
+	 * {@linkplain PreparedImplementorBeanHolderFactory}.
+	 * <p>
+	 * This method access shared {@linkplain #rawSingletonBeans} and need
+	 * synchronization when calling.
+	 * </p>
+	 * 
+	 * @param preparedImplementorBeanHolderFactory
+	 */
+	protected void initImplementorBeansForSingleton(
+			PreparedImplementorBeanHolderFactory preparedImplementorBeanHolderFactory)
+	{
+		for (int i = 0, len = this.rawSingletonBeans.size(); i < len; i++)
+		{
+			preparedImplementorBeanHolderFactory
+					.add(this.rawSingletonBeans.get(i));
+		}
+	}
+
+	/**
+	 * Initialize {@linkplain ImplementorBeanHolder}s for prototype
 	 * <i>implementor</i> beans in given
 	 * {@linkplain PreparedImplementorBeanHolderFactory}.
 	 * <p>
@@ -460,7 +488,7 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 	 * 
 	 * @param preparedImplementorBeanHolderFactory
 	 */
-	protected void createImplementorBeanHoldersForPrototype(
+	protected void initImplementorBeansForPrototype(
 			PreparedImplementorBeanHolderFactory preparedImplementorBeanHolderFactory)
 	{
 		Set<Class<?>> implementors = preparedImplementorBeanHolderFactory
@@ -500,7 +528,7 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 	 */
 	protected String generateImplementeeBeanName(Class<?> implementee)
 	{
-		return this.implementeeBeanNameGenerator.generate(implementee);
+		return implementee.getClass().getName();
 	}
 
 	/**

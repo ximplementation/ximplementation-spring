@@ -352,9 +352,6 @@ public class ImplementeeBeanCreationPostProcessorTest
 				.getBean(
 						TestPrototypeImplementorBean_AopOfJdkProxy.TPIController.class);
 
-		TestPrototypeImplementorBean_AopOfJdkProxy.TPIService service = controller
-				.getService();
-
 		// singleton
 		assertEquals(0, controller
 				.getCount(
