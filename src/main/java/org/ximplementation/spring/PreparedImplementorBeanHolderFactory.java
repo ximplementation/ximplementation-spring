@@ -25,14 +25,13 @@ import org.ximplementation.support.PreparedImplementorBeanFactory;
 /**
  * Bean holder supported {@linkplain PreparedImplementorBeanFactory}.
  * <p>
- * It can add {@linkplain ImplementorBeanHolder} objects for supporting Spring
- * prototype bean, and they will be unpacked in
- * {@linkplain #getImplementorBeans(Class)}.
+ * It can add {@linkplain BeanHolder} objects for supporting Spring beans, and
+ * they will be unpacked in {@linkplain #getImplementorBeans(Class)}.
  * </p>
  * 
  * @author earthangry@gmail.com
  * @date 2016-11-10
- * @see ImplementorBeanHolder
+ * @see BeanHolder
  */
 public class PreparedImplementorBeanHolderFactory
 		extends PreparedImplementorBeanFactory
@@ -66,8 +65,8 @@ public class PreparedImplementorBeanHolderFactory
 
 		for (Object bean : implementorBeans)
 		{
-			if (bean instanceof ImplementorBeanHolder)
-				re.add(((ImplementorBeanHolder) bean).getBean());
+			if (bean instanceof BeanHolder)
+				re.add(((BeanHolder) bean).getBean());
 			else
 				re.add(bean);
 		}

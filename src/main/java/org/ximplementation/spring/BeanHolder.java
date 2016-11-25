@@ -20,15 +20,9 @@ import java.lang.reflect.Proxy;
 
 import org.springframework.aop.framework.AdvisedSupport;
 import org.springframework.beans.factory.BeanFactory;
-import org.ximplementation.support.ImplementorBeanFactory;
 
 /**
- * Holder for <i>implementor</i> bean.
- * <p>
- * Prototype <i>implementor</i> beans in Spring can not add to
- * {@linkplain ImplementorBeanFactory} directly. Instead, this bean holder will
- * be added for getting prototype <i>implementor</i> beans.
- * </p>
+ * Bean holder.
  * <p>
  * Each call on {@linkplain #getBean()} method will call the
  * {@linkplain #getBeanFactory()}'s {@linkplain BeanFactory#getBean(String)}
@@ -37,10 +31,9 @@ import org.ximplementation.support.ImplementorBeanFactory;
  * 
  * @author earthangry@gmail.com
  * @date 2016-11-10
- * @see PreparedImplementorBeanHolderFactory
  *
  */
-public class ImplementorBeanHolder
+public class BeanHolder
 {
 	protected static final String JdkDynamicAopProxyName = "org.springframework.aop.framework.JdkDynamicAopProxy";
 
@@ -54,47 +47,31 @@ public class ImplementorBeanHolder
 
 	protected static volatile Field cglib2AopProxyNameAdvisedField = null;
 
-	private Class<?> implementor;
-
 	private BeanFactory beanFactory;
 
 	private String beanName;
 
-	private boolean peel;
+	private boolean peeling;
 
-	public ImplementorBeanHolder()
+	/**
+	 * Create an instance.
+	 * 
+	 * @param beanFactory
+	 *            The Spring BeanFactory used for getting <i>implementor</i>
+	 *            bean.
+	 * @param beanName
+	 *            The holden <i>implementor</i> bean name.
+	 * @param peel
+	 *            If peeling proxy bean to return the raw bean, {@code true} if
+	 *            yes, {@code false} if no.
+	 */
+	public BeanHolder(BeanFactory beanFactory,
+			String beanName, boolean peeling)
 	{
 		super();
-	}
-
-	public ImplementorBeanHolder(Class<?> implementor, BeanFactory beanFactory,
-			String beanName, boolean peel)
-	{
-		super();
-		this.implementor = implementor;
 		this.beanFactory = beanFactory;
 		this.beanName = beanName;
-		this.peel = peel;
-	}
-
-	/**
-	 * Get the holding <i>implementor</i>.
-	 * 
-	 * @return
-	 */
-	public Class<?> getImplementor()
-	{
-		return implementor;
-	}
-
-	/**
-	 * Set the holding <i>implementor</i>.
-	 * 
-	 * @param implementor
-	 */
-	public void setImplementor(Class<?> implementor)
-	{
-		this.implementor = implementor;
+		this.peeling = peeling;
 	}
 
 	/**
@@ -108,17 +85,7 @@ public class ImplementorBeanHolder
 	}
 
 	/**
-	 * Set the {@linkplain BeanFactory}.
-	 * 
-	 * @param beanFactory
-	 */
-	public void setBeanFactory(BeanFactory beanFactory)
-	{
-		this.beanFactory = beanFactory;
-	}
-
-	/**
-	 * Get the holding <i>implementor</i> bean name.
+	 * Get the holden bean name.
 	 * 
 	 * @return
 	 */
@@ -128,43 +95,21 @@ public class ImplementorBeanHolder
 	}
 
 	/**
-	 * Set the holding <i>implementor</i> bean name.
-	 * 
-	 * @param beanName
-	 */
-	public void setBeanName(String beanName)
-	{
-		this.beanName = beanName;
-	}
-
-	/**
 	 * Return if {@linkplain #getBean()} should peel proxy bean to return the
 	 * raw bean.
 	 * 
 	 * @return {@code true} if yes, {@code false} if no.
 	 */
-	public boolean isPeel()
+	public boolean isPeeling()
 	{
-		return peel;
+		return peeling;
 	}
 
 	/**
-	 * Set if {@linkplain #getBean()} should peel proxy bean to return the raw
-	 * bean.
-	 * 
-	 * @param peel
-	 *            {@code true} if yes, {@code false} if no.
-	 */
-	public void setPeel(boolean peel)
-	{
-		this.peel = peel;
-	}
-
-	/**
-	 * Get bean from the underline {@linkplain #getBeanFactory() BeanFactory}.
+	 * Get the holden bean.
 	 * <p>
 	 * It will try to peeling proxy bean and return the raw bean if
-	 * {@linkplain #isPeel()} is {@code true}.
+	 * {@linkplain #isPeeling()} is {@code true}.
 	 * </p>
 	 * 
 	 * @return
@@ -173,7 +118,7 @@ public class ImplementorBeanHolder
 	{
 		Object bean = this.beanFactory.getBean(this.beanName);
 
-		if (!peel)
+		if (!peeling)
 			return bean;
 
 		// JDK Proxy

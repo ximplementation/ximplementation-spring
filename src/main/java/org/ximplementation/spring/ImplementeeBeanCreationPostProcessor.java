@@ -23,7 +23,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -144,6 +143,8 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 {
 	private ImplementorManager implementorManager = new ImplementorManager();
 
+	private Map<Class<?>, List<String>> implementorBeanNamesMap = new HashMap<Class<?>, List<String>>();
+
 	private ImplementationResolver implementationResolver = new ImplementationResolver();
 
 	private ImplementeeBeanBuilder implementeeBeanBuilder = new CglibImplementeeBeanBuilder();
@@ -153,28 +154,12 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 
 	private ConfigurableListableBeanFactory beanFactory;
 
-	private Map<Class<?>, List<String>> implementorBeanNamesMap = new HashMap<Class<?>, List<String>>();
-
 	/**
-	 * stores implmentee beans created for specified type in
+	 * stores implementee beans created for specified type in
 	 * {@link #postProcessPropertyValues(PropertyValues, PropertyDescriptor[], Object, String)}
 	 * , used for all afterwards dependency injections.
 	 */
 	private ConcurrentHashMap<Class<?>, Object> initializedImplementeeBeans = new ConcurrentHashMap<Class<?>, Object>();
-
-	/**
-	 * stores raw singleton beans passed in
-	 * {@link #postProcessAfterInstantiation(Object, String)}.
-	 */
-	private List<Object> rawSingletonBeans = new LinkedList<Object>();
-
-	/**
-	 * stores all PreparedImplementorBeanHolderFactorys created in
-	 * {@link #postProcessPropertyValues(PropertyValues, PropertyDescriptor[], Object, String)}
-	 * , which will be update in
-	 * {@link #postProcessAfterInstantiation(Object, String)}.
-	 */
-	private List<PreparedImplementorBeanHolderFactory> preparedImplementorBeanHolderFactories = new ArrayList<PreparedImplementorBeanHolderFactory>();
 
 	private final Set<Class<? extends Annotation>> autowiredAnnotationTypes = new LinkedHashSet<Class<? extends Annotation>>();
 
@@ -269,33 +254,6 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 	}
 
 	@Override
-	public boolean postProcessAfterInstantiation(Object bean, String beanName)
-			throws BeansException
-	{
-		BeanDefinition beanDefinition = this.beanFactory
-				.getBeanDefinition(beanName);
-
-		// only handle singleton beans
-		// prototype beans are handled by
-		// initImplementorBeansForPrototype(...) in
-		// postProcessPropertyValues(...) method
-		if (beanDefinition.isSingleton())
-		{
-			synchronized (this.preparedImplementorBeanHolderFactories)
-			{
-				this.rawSingletonBeans.add(bean);
-
-				for (PreparedImplementorBeanHolderFactory preparedImplementorBeanHolderFactory : this.preparedImplementorBeanHolderFactories)
-				{
-					preparedImplementorBeanHolderFactory.add(bean);
-				}
-			}
-		}
-
-		return super.postProcessAfterInstantiation(bean, beanName);
-	}
-
-	@Override
 	public PropertyValues postProcessPropertyValues(PropertyValues pvs, PropertyDescriptor[] pds, Object bean,
 			String beanName) throws BeansException
 	{
@@ -346,17 +304,8 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 				// put by my thread, then do initialization
 				if (previous == null || implementeeBean == previous)
 				{
-					initImplementorBeansForPrototype(
+					initPreparedImplementorBeanHolderFactory(
 							preparedImplementorBeanHolderFactory);
-
-					synchronized (this.preparedImplementorBeanHolderFactories)
-					{
-						initImplementorBeansForSingleton(
-								preparedImplementorBeanHolderFactory);
-
-						this.preparedImplementorBeanHolderFactories
-								.add(preparedImplementorBeanHolderFactory);
-					}
 
 					this.beanFactory.registerResolvableDependency(propertyType,
 							implementeeBean);
@@ -456,66 +405,45 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 	}
 
 	/**
-	 * Initialize {@linkplain ImplementorBeanHolder}s for singleton
-	 * <i>implementor</i> beans in given
-	 * {@linkplain PreparedImplementorBeanHolderFactory}.
-	 * <p>
-	 * This method access shared {@linkplain #rawSingletonBeans} and need
-	 * synchronization when calling.
-	 * </p>
+	 * Init {@linkplain PreparedImplementorBeanHolderFactory}.
 	 * 
 	 * @param preparedImplementorBeanHolderFactory
 	 */
-	protected void initImplementorBeansForSingleton(
-			PreparedImplementorBeanHolderFactory preparedImplementorBeanHolderFactory)
-	{
-		for (int i = 0, len = this.rawSingletonBeans.size(); i < len; i++)
-		{
-			preparedImplementorBeanHolderFactory
-					.add(this.rawSingletonBeans.get(i));
-		}
-	}
-
-	/**
-	 * Initialize {@linkplain ImplementorBeanHolder}s for prototype
-	 * <i>implementor</i> beans in given
-	 * {@linkplain PreparedImplementorBeanHolderFactory}.
-	 * <p>
-	 * Prototype beans are different with singleton beans, they are created
-	 * every request, so must not be added in
-	 * {@linkplain #postProcessAfterInstantiation(Object, String)}
-	 * </p>
-	 * 
-	 * @param preparedImplementorBeanHolderFactory
-	 */
-	protected void initImplementorBeansForPrototype(
+	protected void initPreparedImplementorBeanHolderFactory(
 			PreparedImplementorBeanHolderFactory preparedImplementorBeanHolderFactory)
 	{
 		Set<Class<?>> implementors = preparedImplementorBeanHolderFactory
 				.getAllImplementors();
-		
-		for(Class<?> implementor : implementors)
+
+		for (Class<?> implementor : implementors)
 		{
 			// synchronization for this.implementorBeanNamesMap is not
 			// necessary, see
 			// #initImplementorManagerAndImplementorBeanNamesMap() doc
 			List<String> implementorBeanNames = this.implementorBeanNamesMap
-						.get(implementor);
+					.get(implementor);
 
 			for (String implementorBeanName : implementorBeanNames)
 			{
 				BeanDefinition beanDefinition = this.beanFactory
 						.getBeanDefinition(implementorBeanName);
-				
-				if(beanDefinition.isPrototype())
-				{
-					ImplementorBeanHolder implementorBeanHolder = new ImplementorBeanHolder(
-							implementor, this.beanFactory, implementorBeanName,
-							true);
 
-					preparedImplementorBeanHolderFactory
-							.add(implementor, implementorBeanHolder);
+				BeanHolder implementorBeanHolder = null;
+
+				if (beanDefinition.isPrototype())
+				{
+					implementorBeanHolder = new BeanHolder(
+							this.beanFactory, implementorBeanName,
+							true);
 				}
+				else
+				{
+					implementorBeanHolder = new SingletonBeanHolder(
+							this.beanFactory, implementorBeanName, true);
+				}
+
+				preparedImplementorBeanHolderFactory.add(implementor,
+						implementorBeanHolder);
 			}
 		}
 	}

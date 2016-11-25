@@ -15,7 +15,7 @@
 package org.ximplementation.spring;
 
 /**
- * Peel Spring proxy exception in {@linkplain ImplementorBeanHolder}.
+ * Peel Spring proxy exception in {@linkplain BeanHolder}.
  * 
  * @author earthangry@gmail.com
  * @date 2016-11-16
