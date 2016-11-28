@@ -49,7 +49,7 @@ public class ImplementeeBeanCreationPostProcessorTest
 	public void setUp() throws Exception
 	{
 		applicationContext = new ClassPathXmlApplicationContext(
-				"classpath:ImplementeeBeanCreationPostProcessorTest.xml");
+				"classpath:applicationContext.xml");
 	}
 
 	@After
