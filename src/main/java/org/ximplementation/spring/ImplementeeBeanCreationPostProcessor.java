@@ -257,6 +257,11 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 	public boolean postProcessAfterInstantiation(Object bean, String beanName)
 			throws BeansException
 	{
+		// XXX
+		// Add implementor beans to PreparedImplementorBeanHolderFactory is
+		// not an good idea, this method may be called in multiple threads
+		// especially for prototype and lazy initialized beans, which may make
+		// PreparedImplementorBeanHolderFactory have thread safety problem.
 		return super.postProcessAfterInstantiation(bean, beanName);
 	}
 
