@@ -15,32 +15,32 @@
 package org.ximplementation.spring;
 
 /**
- * Peel Spring proxy exception in {@linkplain BeanHolder}.
+ * Proxy peeling exception.
  * 
  * @author earthangry@gmail.com
  * @date 2016-11-16
- *
+ * @see ProxyUtil
  */
-public class PeelSpringProxyException extends RuntimeException
+public class ProxyPeelingException extends RuntimeException
 {
 	private static final long serialVersionUID = 1L;
 
-	public PeelSpringProxyException()
+	public ProxyPeelingException()
 	{
 		super();
 	}
 
-	public PeelSpringProxyException(String message)
+	public ProxyPeelingException(String message)
 	{
 		super(message);
 	}
 
-	public PeelSpringProxyException(Throwable cause)
+	public ProxyPeelingException(Throwable cause)
 	{
 		super(cause);
 	}
 
-	public PeelSpringProxyException(String message, Throwable cause)
+	public ProxyPeelingException(String message, Throwable cause)
 	{
 		super(message, cause);
 	}

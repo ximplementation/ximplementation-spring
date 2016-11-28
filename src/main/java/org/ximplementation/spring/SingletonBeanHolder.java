@@ -23,6 +23,9 @@ import org.springframework.beans.factory.BeanFactory;
  * first call to {@linkplain #getBean()}, cache it, and returns the same bean
  * for all afterwards calls.
  * </p>
+ * <p>
+ * Note that this class is thread-safe and can be accessed by multiple threads.
+ * </p>
  * 
  * @author earthangry@gmail.com
  * @date 2016-11-25

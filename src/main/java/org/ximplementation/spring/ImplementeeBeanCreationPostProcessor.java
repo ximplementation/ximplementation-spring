@@ -254,6 +254,13 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 	}
 
 	@Override
+	public boolean postProcessAfterInstantiation(Object bean, String beanName)
+			throws BeansException
+	{
+		return super.postProcessAfterInstantiation(bean, beanName);
+	}
+
+	@Override
 	public PropertyValues postProcessPropertyValues(PropertyValues pvs, PropertyDescriptor[] pds, Object bean,
 			String beanName) throws BeansException
 	{
@@ -294,8 +301,8 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 
 				// AOP will be applied to this implementee bean, so the
 				// ImplementorBeanFactory must return the raw implementor
-				// beans, this is done in #postProcessAfterInstantiation()
-				// method above
+				// beans, this is done in
+				// #initPreparedImplementorBeanHolderFactory(...)
 				implementeeBean = this.beanFactory
 						.initializeBean(implementeeBean, generateImplementeeBeanName(propertyType));
 
@@ -374,37 +381,6 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 	}
 
 	/**
-	 * Returns property type for <i>ximplementation</i>, {@code null} if not
-	 * valid.
-	 * 
-	 * @param beanClass
-	 * @param pd
-	 * @return
-	 */
-	protected Class<?> getPropertyTypeForXImplementation(Class<?> beanClass, PropertyDescriptor pd)
-	{
-		// write method
-		Method writeMethod = pd.getWriteMethod();
-		if (writeMethod != null && !isQualified(writeMethod))
-		{
-			Annotation autowiredAnno = findAutowiredAnnotation(writeMethod);
-
-			if (autowiredAnno != null)
-				return writeMethod.getParameterTypes()[0];
-		}
-
-		// Field
-		Field field = findFieldByName(beanClass, pd.getName());
-
-		if (field == null || isQualified(field))
-			return null;
-
-		Annotation autowiredAnno = findAutowiredAnnotation(field);
-
-		return (autowiredAnno == null ? null : field.getType());
-	}
-
-	/**
 	 * Init {@linkplain PreparedImplementorBeanHolderFactory}.
 	 * 
 	 * @param preparedImplementorBeanHolderFactory
@@ -446,6 +422,37 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 						implementorBeanHolder);
 			}
 		}
+	}
+
+	/**
+	 * Returns property type for <i>ximplementation</i>, {@code null} if not
+	 * valid.
+	 * 
+	 * @param beanClass
+	 * @param pd
+	 * @return
+	 */
+	protected Class<?> getPropertyTypeForXImplementation(Class<?> beanClass, PropertyDescriptor pd)
+	{
+		// write method
+		Method writeMethod = pd.getWriteMethod();
+		if (writeMethod != null && !isQualified(writeMethod))
+		{
+			Annotation autowiredAnno = findAutowiredAnnotation(writeMethod);
+	
+			if (autowiredAnno != null)
+				return writeMethod.getParameterTypes()[0];
+		}
+	
+		// Field
+		Field field = findFieldByName(beanClass, pd.getName());
+	
+		if (field == null || isQualified(field))
+			return null;
+	
+		Annotation autowiredAnno = findAutowiredAnnotation(field);
+	
+		return (autowiredAnno == null ? null : field.getType());
 	}
 
 	/**
