@@ -44,14 +44,37 @@ public class SingletonBeanHolder extends BeanHolder
 	@Override
 	public Object getBean()
 	{
-		if (this.singletonBean != null)
-			return this.singletonBean;
+		Object cached = getSingletonBean();
+
+		if (cached != null)
+			return cached;
 		else
 		{
 			Object bean = super.getBean();
-			this.singletonBean = bean;
+
+			setSingletonBean(bean);
 
 			return bean;
 		}
+	}
+
+	/**
+	 * Get the cached singleton bean.
+	 * 
+	 * @return
+	 */
+	protected Object getSingletonBean()
+	{
+		return singletonBean;
+	}
+
+	/**
+	 * Set the cached singleton bean.
+	 * 
+	 * @param singletonBean
+	 */
+	protected void setSingletonBean(Object singletonBean)
+	{
+		this.singletonBean = singletonBean;
 	}
 }
