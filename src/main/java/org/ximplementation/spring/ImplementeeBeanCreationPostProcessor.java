@@ -71,7 +71,8 @@ import org.ximplementation.support.ImplementorManager;
  * <li>The injected setter method or field is annotated with
  * {@linkplain Autowired} or {@code javax.inject.Inject};</li>
  * <li>The injected setter method or field is NOT annotated with
- * {@linkplain Qualifier} or {@code javax.inject.Named}.</li>
+ * {@linkplain Qualifier} nor {@code javax.inject.Named} nor
+ * {@code javax.annotation.Resource}.</li>
  * <li>There are more than one <i>implementor</i>s for the injected type in the
  * Spring context.</li>
  * </ul>
@@ -184,6 +185,14 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 		try
 		{
 			this.qualifierAnnotationTypes.add((Class<? extends Annotation>) cl.loadClass("javax.inject.Named"));
+		}
+		catch (ClassNotFoundException ex)
+		{
+		}
+		try
+		{
+			this.qualifierAnnotationTypes.add((Class<? extends Annotation>) cl
+					.loadClass("javax.annotation.Resource"));
 		}
 		catch (ClassNotFoundException ex)
 		{
