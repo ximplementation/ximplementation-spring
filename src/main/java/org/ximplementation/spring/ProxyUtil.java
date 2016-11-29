@@ -34,12 +34,6 @@ public class ProxyUtil
 	public static final String JdkDynamicAopProxyName = "org.springframework.aop.framework.JdkDynamicAopProxy";
 
 	/**
-	 * The full class name of
-	 * {@linkplain org.springframework.aop.framework.Cglib2AopProxy}.
-	 */
-	public static final String Cglib2AopProxyName = "org.springframework.aop.framework.Cglib2AopProxy";
-
-	/**
 	 * The {@linkplain org.springframework.aop.framework.AdvisedSupport advised}
 	 * field name in
 	 * {@linkplain org.springframework.aop.framework.JdkDynamicAopProxy} .
@@ -47,11 +41,25 @@ public class ProxyUtil
 	public static final String JdkDynamicAopProxyAdvisedSupportFieldName = "advised";
 
 	/**
-	 * The {@linkplain org.springframework.aop.framework.AdvisedSupport advised}
-	 * field name in
+	 * The full class name of
 	 * {@linkplain org.springframework.aop.framework.Cglib2AopProxy}.
 	 */
-	public static final String Cglib2AopProxyAdvisedSupportFieldName = "advised";
+	public static final String Cglib2AopProxyName = "org.springframework.aop.framework.Cglib2AopProxy";
+
+	/**
+	 * The full class name of
+	 * {@linkplain org.springframework.aop.framework.Cglib2AopProxy.DynamicAdvisedInterceptor}
+	 * .
+	 */
+	public static final String Cglib2AopProxyDynamicAdvisedInterceptorCallbackName = "org.springframework.aop.framework.Cglib2AopProxy$DynamicAdvisedInterceptor";
+
+	/**
+	 * The {@linkplain org.springframework.aop.framework.AdvisedSupport advised}
+	 * field name in
+	 * {@linkplain org.springframework.aop.framework.Cglib2AopProxy.DynamicAdvisedInterceptor}
+	 * .
+	 */
+	public static final String Cglib2AopProxyDynamicAdvisedInterceptorCallbackAdvisedSupportFieldName = "advised";
 
 	private static volatile Field springJdkProxyAdvisedField = null;
 
@@ -118,34 +126,49 @@ public class ProxyUtil
 	 * @throws ProxyPeelingException
 	 */
 	public static Object peelSpringCglibProxy(
-			net.sf.cglib.proxy.Proxy cglibProxy)
+			net.sf.cglib.proxy.Factory cglibProxy)
 			throws ProxyPeelingException
 	{
-		net.sf.cglib.proxy.InvocationHandler invocationHandler = net.sf.cglib.proxy.Proxy
-				.getInvocationHandler(cglibProxy);
+		net.sf.cglib.proxy.Callback[] callbacks = cglibProxy.getCallbacks();
 
-		Class<?> invocationHandlerClass = invocationHandler.getClass();
+		if (callbacks == null || callbacks.length == 0)
+			throw new ProxyPeelingException("Peeling is not supported, Proxy ["
+					+ cglibProxy + "] may not be created by ["
+					+ Cglib2AopProxyName + "], no callbacks is defined.");
 
-		if (!Cglib2AopProxyName.equals(invocationHandlerClass.getName()))
-			throw new ProxyPeelingException(
-					"Peeling is not supported, Proxy [" + cglibProxy
-							+ "] is not created by [" + Cglib2AopProxyName
-							+ "]");
+		net.sf.cglib.proxy.Callback dynamicAdvisedInterceptor = null;
+
+		for (net.sf.cglib.proxy.Callback callback : callbacks)
+		{
+			if (Cglib2AopProxyDynamicAdvisedInterceptorCallbackName
+					.equals(callback.getClass().getName()))
+			{
+				dynamicAdvisedInterceptor = callback;
+				break;
+			}
+		}
+
+		if (dynamicAdvisedInterceptor == null)
+			throw new ProxyPeelingException("Peeling is not supported, Proxy ["
+					+ cglibProxy + "] may not be created by ["
+					+ Cglib2AopProxyName + "], no ["
+					+ Cglib2AopProxyDynamicAdvisedInterceptorCallbackName
+					+ "] found in its callbacks.");
 
 		try
 		{
 			if (cglib2AopProxyNameAdvisedField == null)
 			{
-				cglib2AopProxyNameAdvisedField = invocationHandlerClass
-						.getDeclaredField(
-								Cglib2AopProxyAdvisedSupportFieldName);
+				cglib2AopProxyNameAdvisedField = dynamicAdvisedInterceptor
+						.getClass().getDeclaredField(
+								Cglib2AopProxyDynamicAdvisedInterceptorCallbackAdvisedSupportFieldName);
 
 				if (!cglib2AopProxyNameAdvisedField.isAccessible())
 					cglib2AopProxyNameAdvisedField.setAccessible(true);
 			}
 
 			AdvisedSupport advisedSupport = (AdvisedSupport) cglib2AopProxyNameAdvisedField
-					.get(invocationHandler);
+					.get(dynamicAdvisedInterceptor);
 
 			return advisedSupport.getTargetSource().getTarget();
 		}

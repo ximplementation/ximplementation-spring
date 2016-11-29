@@ -138,8 +138,8 @@ public class BeanHolder
 
 		if (bean instanceof java.lang.reflect.Proxy)
 			bean = peelSpringJdkProxy((java.lang.reflect.Proxy) bean);
-		else if (bean instanceof net.sf.cglib.proxy.Proxy)
-			bean = peelSpringCglibProxy((net.sf.cglib.proxy.Proxy) bean);
+		else if (bean instanceof net.sf.cglib.proxy.Factory)
+			bean = peelSpringCglibProxy((net.sf.cglib.proxy.Factory) bean);
 
 		return bean;
 	}
@@ -164,7 +164,7 @@ public class BeanHolder
 	 * @return The not proxied raw bean object
 	 * @throws ProxyPeelingException
 	 */
-	protected Object peelSpringCglibProxy(net.sf.cglib.proxy.Proxy cglibProxy)
+	protected Object peelSpringCglibProxy(net.sf.cglib.proxy.Factory cglibProxy)
 			throws ProxyPeelingException
 	{
 		return ProxyUtil.peelSpringCglibProxy(cglibProxy);
