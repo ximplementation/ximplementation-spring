@@ -17,13 +17,11 @@ package org.ximplementation.spring;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
-import org.ximplementation.support.Implementation;
-import org.ximplementation.support.PreparedImplementorBeanFactory;
+import org.ximplementation.support.EditableImplementorBeanFactory;
 
 /**
- * Bean holder supported {@linkplain PreparedImplementorBeanFactory}.
+ * Bean holder supported {@linkplain EditableImplementorBeanFactory}.
  * <p>
  * It can add {@linkplain BeanHolder} objects for supporting Spring beans, and
  * they will be unpacked in {@linkplain #getImplementorBeans(Class)}.
@@ -33,23 +31,12 @@ import org.ximplementation.support.PreparedImplementorBeanFactory;
  * @date 2016-11-10
  * @see BeanHolder
  */
-public class PreparedImplementorBeanHolderFactory
-		extends PreparedImplementorBeanFactory
+public class EditableImplementorBeanHolderFactory
+		extends EditableImplementorBeanFactory
 {
-	public PreparedImplementorBeanHolderFactory()
+	public EditableImplementorBeanHolderFactory()
 	{
 		super();
-	}
-
-	public PreparedImplementorBeanHolderFactory(
-			Implementation<?> implementation)
-	{
-		super(implementation);
-	}
-
-	public PreparedImplementorBeanHolderFactory(Set<Class<?>> implementors)
-	{
-		super(implementors);
 	}
 
 	@SuppressWarnings("unchecked")

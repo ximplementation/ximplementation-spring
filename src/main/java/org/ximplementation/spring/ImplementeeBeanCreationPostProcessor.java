@@ -258,10 +258,10 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 			throws BeansException
 	{
 		// XXX
-		// Add implementor beans to PreparedImplementorBeanHolderFactory is
+		// Add implementor beans to EditableImplementorBeanHolderFactory is
 		// not an good idea, this method may be called in multiple threads
 		// especially for prototype and lazy initialized beans, which may make
-		// PreparedImplementorBeanHolderFactory have thread safety problem.
+		// EditableImplementorBeanHolderFactory have thread safety problem.
 		return super.postProcessAfterInstantiation(bean, beanName);
 	}
 
@@ -298,16 +298,15 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 				Implementation<?> implementation = this.implementationResolver
 						.resolve(propertyType, implementors);
 
-				PreparedImplementorBeanHolderFactory preparedImplementorBeanHolderFactory = new PreparedImplementorBeanHolderFactory(
-						implementation);
+				EditableImplementorBeanHolderFactory editableImplementorBeanHolderFactory = new EditableImplementorBeanHolderFactory();
 
 				implementeeBean = this.implementeeBeanBuilder.build(
-						implementation, preparedImplementorBeanHolderFactory);
+						implementation, editableImplementorBeanHolderFactory);
 
 				// AOP will be applied to this implementee bean, so the
 				// ImplementorBeanFactory must return the raw implementor
 				// beans, this is done in
-				// #initPreparedImplementorBeanHolderFactory(...)
+				// #initEditableImplementorBeanHolderFactory(...)
 				implementeeBean = this.beanFactory
 						.initializeBean(implementeeBean, generateImplementeeBeanName(propertyType));
 
@@ -316,8 +315,9 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 				// put by my thread, then do initialization
 				if (previous == null || implementeeBean == previous)
 				{
-					initPreparedImplementorBeanHolderFactory(
-							preparedImplementorBeanHolderFactory);
+					initEditableImplementorBeanHolderFactory(
+							editableImplementorBeanHolderFactory,
+							implementation.getImplementors());
 
 					this.beanFactory.registerResolvableDependency(propertyType,
 							implementeeBean);
@@ -386,16 +386,15 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 	}
 
 	/**
-	 * Init {@linkplain PreparedImplementorBeanHolderFactory}.
+	 * Init {@linkplain EditableImplementorBeanHolderFactory}.
 	 * 
-	 * @param preparedImplementorBeanHolderFactory
+	 * @param editableImplementorBeanHolderFactory
+	 * @param implementors
 	 */
-	protected void initPreparedImplementorBeanHolderFactory(
-			PreparedImplementorBeanHolderFactory preparedImplementorBeanHolderFactory)
+	protected void initEditableImplementorBeanHolderFactory(
+			EditableImplementorBeanHolderFactory editableImplementorBeanHolderFactory,
+			Set<Class<?>> implementors)
 	{
-		Set<Class<?>> implementors = preparedImplementorBeanHolderFactory
-				.getAllImplementors();
-
 		for (Class<?> implementor : implementors)
 		{
 			// synchronization for this.implementorBeanNamesMap is not
@@ -423,7 +422,7 @@ public class ImplementeeBeanCreationPostProcessor extends InstantiationAwareBean
 							this.beanFactory, implementorBeanName, true);
 				}
 
-				preparedImplementorBeanHolderFactory.add(implementor,
+				editableImplementorBeanHolderFactory.add(implementor,
 						implementorBeanHolder);
 			}
 		}

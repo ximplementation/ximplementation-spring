@@ -27,13 +27,13 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.stereotype.Component;
 
 /**
- * {@linkplain PreparedImplementorBeanHolderFactory} unit tests.
+ * {@linkplain EditableImplementorBeanHolderFactory} unit tests.
  * 
  * @author earthangry@gmail.com
  * @date 2016-11-28
  *
  */
-public class PreparedImplementorBeanHolderFactoryTest
+public class EditableImplementorBeanHolderFactoryTest
 {
 	private ApplicationContext applicationContext;
 
@@ -53,19 +53,16 @@ public class PreparedImplementorBeanHolderFactoryTest
 	@Test
 	public void getImplementorBeansTest()
 	{
-		PreparedImplementorBeanHolderFactory factory = new PreparedImplementorBeanHolderFactory();
-		factory.prepare(MyBeanA.class);
-		factory.prepare(
-				MyBeanB.class);
-		
+		EditableImplementorBeanHolderFactory factory = new EditableImplementorBeanHolderFactory();
+
 		BeanHolder beanHolderA0 = new BeanHolder(applicationContext,
-				"preparedImplementorBeanHolderFactoryTest.MyBeanA",
+				"editableImplementorBeanHolderFactoryTest.MyBeanA",
 				true);
 		BeanHolder beanHolderA1 = new BeanHolder(applicationContext,
-				"preparedImplementorBeanHolderFactoryTest.MyBeanA",
+				"editableImplementorBeanHolderFactoryTest.MyBeanA",
 				true);
 		BeanHolder beanHolderB = new BeanHolder(applicationContext,
-				"preparedImplementorBeanHolderFactoryTest.MyBeanB",
+				"editableImplementorBeanHolderFactoryTest.MyBeanB",
 				true);
 
 		factory.add(MyBeanA.class, beanHolderA0);
