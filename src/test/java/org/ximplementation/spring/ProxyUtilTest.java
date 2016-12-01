@@ -127,7 +127,7 @@ public class ProxyUtilTest
 		expectedException.expect(ProxyPeelingException.class);
 		expectedException.expectMessage("] may not be created by ["
 				+ ProxyUtil.Cglib2AopProxyName + "], no ["
-				+ ProxyUtil.Cglib2AopProxyDynamicAdvisedInterceptorCallbackName
+				+ ProxyUtil.Cglib2AopProxyDynamicAdvisedInterceptorName
 				+ "] found in its callbacks.");
 
 		ProxyUtil.peelSpringCglibProxy((net.sf.cglib.proxy.Factory) proxy);

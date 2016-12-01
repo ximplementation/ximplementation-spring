@@ -51,7 +51,7 @@ public class ProxyUtil
 	 * {@linkplain org.springframework.aop.framework.Cglib2AopProxy.DynamicAdvisedInterceptor}
 	 * .
 	 */
-	public static final String Cglib2AopProxyDynamicAdvisedInterceptorCallbackName = "org.springframework.aop.framework.Cglib2AopProxy$DynamicAdvisedInterceptor";
+	public static final String Cglib2AopProxyDynamicAdvisedInterceptorName = "org.springframework.aop.framework.Cglib2AopProxy$DynamicAdvisedInterceptor";
 
 	/**
 	 * The {@linkplain org.springframework.aop.framework.AdvisedSupport advised}
@@ -59,11 +59,11 @@ public class ProxyUtil
 	 * {@linkplain org.springframework.aop.framework.Cglib2AopProxy.DynamicAdvisedInterceptor}
 	 * .
 	 */
-	public static final String Cglib2AopProxyDynamicAdvisedInterceptorCallbackAdvisedSupportFieldName = "advised";
+	public static final String Cglib2AopProxyDynamicAdvisedInterceptorAdvisedSupportFieldName = "advised";
 
-	private static volatile Field springJdkProxyAdvisedField = null;
+	private static volatile Field jdkProxyAdvisedField = null;
 
-	private static volatile Field cglib2AopProxyNameAdvisedField = null;
+	private static volatile Field cglibProxyAdvisedField = null;
 
 	/**
 	 * Peel Spring JDK proxy object and returns the raw bean object.
@@ -93,17 +93,17 @@ public class ProxyUtil
 
 		try
 		{
-			if (springJdkProxyAdvisedField == null)
+			if (jdkProxyAdvisedField == null)
 			{
-				springJdkProxyAdvisedField = invocationHandlerClass
+				jdkProxyAdvisedField = invocationHandlerClass
 						.getDeclaredField(
 								JdkDynamicAopProxyAdvisedSupportFieldName);
 
-				if (!springJdkProxyAdvisedField.isAccessible())
-					springJdkProxyAdvisedField.setAccessible(true);
+				if (!jdkProxyAdvisedField.isAccessible())
+					jdkProxyAdvisedField.setAccessible(true);
 			}
 
-			AdvisedSupport advisedSupport = (AdvisedSupport) springJdkProxyAdvisedField
+			AdvisedSupport advisedSupport = (AdvisedSupport) jdkProxyAdvisedField
 					.get(invocationHandler);
 
 			return advisedSupport.getTargetSource().getTarget();
@@ -140,7 +140,7 @@ public class ProxyUtil
 
 		for (net.sf.cglib.proxy.Callback callback : callbacks)
 		{
-			if (Cglib2AopProxyDynamicAdvisedInterceptorCallbackName
+			if (Cglib2AopProxyDynamicAdvisedInterceptorName
 					.equals(callback.getClass().getName()))
 			{
 				dynamicAdvisedInterceptor = callback;
@@ -152,22 +152,22 @@ public class ProxyUtil
 			throw new ProxyPeelingException("Peeling is not supported, Proxy ["
 					+ cglibProxy + "] may not be created by ["
 					+ Cglib2AopProxyName + "], no ["
-					+ Cglib2AopProxyDynamicAdvisedInterceptorCallbackName
+					+ Cglib2AopProxyDynamicAdvisedInterceptorName
 					+ "] found in its callbacks.");
 
 		try
 		{
-			if (cglib2AopProxyNameAdvisedField == null)
+			if (cglibProxyAdvisedField == null)
 			{
-				cglib2AopProxyNameAdvisedField = dynamicAdvisedInterceptor
+				cglibProxyAdvisedField = dynamicAdvisedInterceptor
 						.getClass().getDeclaredField(
-								Cglib2AopProxyDynamicAdvisedInterceptorCallbackAdvisedSupportFieldName);
+								Cglib2AopProxyDynamicAdvisedInterceptorAdvisedSupportFieldName);
 
-				if (!cglib2AopProxyNameAdvisedField.isAccessible())
-					cglib2AopProxyNameAdvisedField.setAccessible(true);
+				if (!cglibProxyAdvisedField.isAccessible())
+					cglibProxyAdvisedField.setAccessible(true);
 			}
 
-			AdvisedSupport advisedSupport = (AdvisedSupport) cglib2AopProxyNameAdvisedField
+			AdvisedSupport advisedSupport = (AdvisedSupport) cglibProxyAdvisedField
 					.get(dynamicAdvisedInterceptor);
 
 			return advisedSupport.getTargetSource().getTarget();
