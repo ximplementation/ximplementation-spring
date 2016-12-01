@@ -1,7 +1,7 @@
 # ximplementation-spring
 Ximplementation-spring lets you use ximplementation in Spring.
 
-The class `org.ximplementation.spring.ImplementeeBeanCreationPostProcessor` is a Spring `BeanPostProcessor` for creating ximplementation beans.
+The class `org.ximplementation.spring.ImplementeeBeanCreationPostProcessor` is a `BeanPostProcessor` for creating ximplementation dependency beans in Spring.
 
 Simply add the following content
 
