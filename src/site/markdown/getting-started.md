@@ -2,14 +2,14 @@
 The class `org.ximplementation.spring.ImplementeeBeanCreationPostProcessor` is a `BeanPostProcessor` for creating <i>ximplementation</i> dependency beans in Spring, which makes Spring support multiple dependency injection and more <i>ximplementation</i> features.
 
 ## First
-Adding the following content
+Add the following content
 
 `<bean class="org.ximplementation.spring.ImplementeeBeanCreationPostProcessor"/>`
 
 to your `applicationContext.xml`.
 
 ## Second
-Writing Spring components with multiple dependencies and <i>ximplementation</i> style:
+Write Spring components with multiple dependencies and <i>ximplementation</i> style:
 
 	@Component
 	public class Controller
