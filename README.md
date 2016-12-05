@@ -1,13 +1,13 @@
 # ximplementation-spring
-Ximplementation-spring lets you use ximplementation in Spring.
+Ximplementation-spring is a library that lets you use <i>ximplementation</i> in Spring, makes Spring support multiple dependency injection and more <i>ximplementation</i> features.
 
-The class `org.ximplementation.spring.ImplementeeBeanCreationPostProcessor` is a `BeanPostProcessor` for creating ximplementation dependency beans in Spring.
+The class `org.ximplementation.spring.ImplementeeBeanCreationPostProcessor` is a `BeanPostProcessor` for creating <i>ximplementation</i> dependency beans in Spring.
 
 Simply add the following content
 
 `<bean class="org.ximplementation.spring.ImplementeeBeanCreationPostProcessor"/>`
 
-to `applicationContext.xml`, then your Spring project will be able to support multiple dependency injection and more ximplementation features.
+to `applicationContext.xml`, then your Spring project will be able to support multiple dependency injection and more <i>ximplementation</i> features.
 
 ## Example
 You can write Spring components like this:

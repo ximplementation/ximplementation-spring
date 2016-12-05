@@ -1,5 +1,5 @@
 # About ximplementation-spring
-Ximplementation-spring is a library lets you use <i>ximplementation</i> in Spring, makes Spring support multiple dependency injection and more <i>ximplementation</i> features.
+Ximplementation-spring is a library that lets you use <i>ximplementation</i> in Spring, makes Spring support multiple dependency injection and more <i>ximplementation</i> features.
 
 [Getting Started](getting-started.html)
 
@@ -9,4 +9,4 @@ Ximplementation-spring is a library lets you use <i>ximplementation</i> in Sprin
 
 You can get the source [Here](https://github.com/earthangry/ximplementation-spring) in Github.
 
-The <i>ximplementation</i> is a framework lets you write implementation freely based on Java annotations, see [Here](https://github.com/earthangry/ximplementation) for more.
+The <i>ximplementation</i> is a framework that lets you write implementation freely based on Java annotations and makes your program support runtime polymorphism, see [Here](https://github.com/earthangry/ximplementation) for more.

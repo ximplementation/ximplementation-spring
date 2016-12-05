@@ -9,9 +9,7 @@
 	<version>0.1.0</version>
 
 	<name>ximplementation-spring</name>
-	<description>
-		The ximplementation-spring is a library lets you use ximplementation in Spring.
-	</description>
+	<description>Ximplementation-spring is a library that lets you use ximplementation in Spring.</description>
 	<url>https://github.com/earthangry/ximplementation-spring</url>
 	
 	<properties>
