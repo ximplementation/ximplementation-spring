@@ -81,6 +81,17 @@ import org.ximplementation.support.ImplementorManager;
  * CGLIB <i>implementee</i> beans for dependency injection.
  * </p>
  * <p>
+ * <b>Attention :</b>
+ * </p>
+ * <p>
+ * The {@linkplain CglibImplementeeBeanBuilder} creates beans which is sub class
+ * of <i>implementee</i>s, this work well if Spring AOP is JDK Proxy , but can
+ * not work if Spring AOP is CGLIB. So, this {@code BeanPostProcessor} can work
+ * well for {@code interface} and {@code class} <i>implementee</i>s if they will
+ * not be AOP, but only can work well for {@code interface} <i>implementee</i>s
+ * if they will be AOP.
+ * </p>
+ * <p>
  * Examples :
  * </p>
  * 
