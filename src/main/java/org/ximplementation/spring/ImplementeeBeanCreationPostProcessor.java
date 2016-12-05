@@ -89,7 +89,7 @@ import org.ximplementation.support.ImplementorManager;
  * not work if Spring AOP is CGLIB. So, this {@code BeanPostProcessor} can work
  * well for {@code interface} and {@code class} <i>implementee</i>s if they will
  * not be AOP, but only can work well for {@code interface} <i>implementee</i>s
- * if they will be AOP.
+ * if they will be AOP and only JDK Proxy AOP.
  * </p>
  * <p>
  * Examples :
