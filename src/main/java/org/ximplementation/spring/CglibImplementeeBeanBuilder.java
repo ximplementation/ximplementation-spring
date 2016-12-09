@@ -17,7 +17,7 @@ package org.ximplementation.spring;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
-import org.ximplementation.support.DefaultImplementeeMethodInvocationFactory;
+import org.ximplementation.support.CachedImplementeeMethodInvocationFactory;
 import org.ximplementation.support.Implementation;
 import org.ximplementation.support.ImplementeeBeanBuilder;
 import org.ximplementation.support.ImplementeeMethodInvocationFactory;
@@ -56,7 +56,7 @@ public class CglibImplementeeBeanBuilder implements ImplementeeBeanBuilder
 	public CglibImplementeeBeanBuilder()
 	{
 		super();
-		this.implementeeMethodInvocationFactory = new DefaultImplementeeMethodInvocationFactory();
+		this.implementeeMethodInvocationFactory = new CachedImplementeeMethodInvocationFactory();
 	}
 
 	public ImplementeeMethodInvocationFactory getImplementeeMethodInvocationFactory()
