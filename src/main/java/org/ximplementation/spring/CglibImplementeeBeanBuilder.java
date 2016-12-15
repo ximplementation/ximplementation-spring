@@ -24,7 +24,9 @@ import org.ximplementation.support.ImplementeeMethodInvocationFactory;
 import org.ximplementation.support.ImplementorBeanFactory;
 import org.ximplementation.support.ProxyImplementeeInvocationSupport;
 
+import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.InvocationHandler;
 
 /**
@@ -104,8 +106,8 @@ public class CglibImplementeeBeanBuilder implements ImplementeeBeanBuilder
 	/**
 	 * The {@linkplain InvocationHandler} for CGLIB <i>implementee</i> bean.
 	 * <p>
-	 * Note that for all invocation on <i>implementee method</i>s which declared
-	 * in {@linkplain Object}, it will call the handler itself's methods.
+	 * Note that for {@code equals(Object)}, {@code hashCode()} and
+	 * {@code toString()} methods, it will call the handler itself's methods.
 	 * </p>
 	 * 
 	 * @author earthangry@gmail.com
@@ -133,10 +135,60 @@ public class CglibImplementeeBeanBuilder implements ImplementeeBeanBuilder
 		public Object invoke(Object proxy, Method method, Object[] args)
 				throws Throwable
 		{
-			if (Object.class.equals(method.getDeclaringClass()))
-				return method.invoke(this, args);
+			if (isEqualsMethod(method))
+				return equals(args[0]);
+
+			if (isHashCodeMethod(method))
+				return hashCode();
+
+			if (isToStringMethod(method))
+				return toString();
 
 			return invoke(method, args);
+		}
+
+		@Override
+		public int hashCode()
+		{
+			return CglibImplementeeInvocationHandler.class.hashCode() * 13
+					+ super.hashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+
+			CglibImplementeeInvocationHandler otherHandler = null;
+
+			if (obj instanceof CglibImplementeeInvocationHandler)
+			{
+				otherHandler = (CglibImplementeeInvocationHandler) obj;
+			}
+			else if (obj instanceof Factory)
+			{
+				Callback[] callbacks = ((Factory) obj).getCallbacks();
+
+				// there is only one Callback
+				if (callbacks == null || callbacks.length != 1)
+					return false;
+
+				Callback ih = callbacks[0];
+
+				if (!(ih instanceof CglibImplementeeInvocationHandler))
+					return false;
+
+				otherHandler = (CglibImplementeeInvocationHandler) ih;
+			}
+			else
+			{
+				return false;
+			}
+
+			return super.equals(otherHandler);
 		}
 	}
 }

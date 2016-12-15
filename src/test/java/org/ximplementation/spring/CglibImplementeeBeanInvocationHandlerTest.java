@@ -15,16 +15,23 @@
 package org.ximplementation.spring;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.ximplementation.Implement;
+import org.ximplementation.Implementor;
+import org.ximplementation.NotImplement;
+import org.ximplementation.spring.CglibImplementeeBeanBuilder.CglibImplementeeInvocationHandler;
 import org.ximplementation.support.Implementation;
 import org.ximplementation.support.ImplementationResolver;
 import org.ximplementation.support.ImplementorBeanFactory;
 import org.ximplementation.support.SimpleImplementorBeanFactory;
+
+import net.sf.cglib.proxy.Factory;
 
 /**
  * {@linkplain CglibImplementeeBeanInvocationHandler} unit tests.
@@ -34,10 +41,14 @@ import org.ximplementation.support.SimpleImplementorBeanFactory;
  *
  */
 public class CglibImplementeeBeanInvocationHandlerTest
+		extends AbstractTestSupport
 {
 	private ImplementationResolver implementationResolver;
 
 	private CglibImplementeeBeanBuilder cglibImplementeeBeanBuilder;
+
+	@Rule
+	public ExpectedException expectedException = ExpectedException.none();
 
 	@Before
 	public void setUp() throws Exception
@@ -52,113 +63,127 @@ public class CglibImplementeeBeanInvocationHandlerTest
 	}
 
 	@Test
-	public void invokeTest()
+	public void invokeTest() throws Throwable
 	{
 		Implementation<Implementee> implementation = this.implementationResolver
-				.resolve(Implementee.class, Implementee.class,
-						Implementor0.class, Implementor1.class);
-
+				.resolve(Implementee.class, Implementor0.class,
+						Implementor1.class);
 		ImplementorBeanFactory implementorBeanFactory = SimpleImplementorBeanFactory
-				.valueOf(new Implementee(), new Implementor0(),
-						new Implementor1());
+				.valueOf(new Implementor0(), new Implementor1());
 
 		Implementee implementee = this.cglibImplementeeBeanBuilder
 				.build(implementation, implementorBeanFactory);
 
-		Assert.assertFalse(implementee.equals(new Object()));
-		Assert.assertNotNull(implementee.handle());
-	}
+		CglibImplementeeInvocationHandler handler = (CglibImplementeeInvocationHandler) (((Factory) implementee)
+				.getCallback(0));
 
-	public static class Implementee
-	{
-		public static final String RE = Implementee.class.getName();
-
-		public String handle()
+		// if (isEqualsMethod(method))
 		{
-			return RE;
+			Method implementeeMethod = getMethodByName(implementee.getClass(),
+					"equals");
+
+			boolean equals = (Boolean) handler.invoke(implementee,
+					implementeeMethod, new Object[] { implementee });
+
+			Assert.assertTrue(equals);
+		}
+
+		// if (isHashCodeMethod(method))
+		{
+			Method implementeeMethod = getMethodByName(implementee.getClass(),
+					"hashCode");
+
+			int hashCode = (Integer) handler.invoke(implementee,
+					implementeeMethod, new Object[] {});
+
+			Assert.assertEquals(handler.hashCode(), hashCode);
+		}
+
+		// if (isToStringMethod(method))
+		{
+			Method implementeeMethod = getMethodByName(implementee.getClass(),
+					"toString");
+
+			String toString = (String) handler.invoke(implementee,
+					implementeeMethod, null);
+
+			Assert.assertEquals(
+					CglibImplementeeInvocationHandler.class.getSimpleName()
+							+ " [implementee=" + implementation.getImplementee()
+							+ "]",
+					toString);
+		}
+
+		{
+			Method implementeeMethod = getMethodByName(Implementee.class,
+					"plus");
+
+			Number re = (Number) handler.invoke(implementee, implementeeMethod,
+					new Object[] { 1, 2 });
+
+			Assert.assertEquals(Implementor1.RE, re);
 		}
 	}
 
-	public static class Implementor0 extends Implementee
+	@Test
+	public void equalsTest() throws Throwable
 	{
-		public static final String RE = Implementor0.class.getName();
+		Implementation<Implementee> implementation = this.implementationResolver
+				.resolve(Implementee.class, Implementor0.class,
+						Implementor1.class);
+		ImplementorBeanFactory implementorBeanFactory = SimpleImplementorBeanFactory
+				.valueOf(new Implementor0(), new Implementor1());
+
+		Implementee implementee = this.cglibImplementeeBeanBuilder
+				.build(implementation, implementorBeanFactory);
+
+		CglibImplementeeInvocationHandler handler = (CglibImplementeeInvocationHandler) (((Factory) implementee)
+				.getCallback(0));
+
+		Assert.assertTrue(handler.equals(handler));
+		Assert.assertFalse(handler.equals(null));
+		Assert.assertTrue(handler
+				.equals(new CglibImplementeeInvocationHandler(implementation,
+						implementorBeanFactory, this.cglibImplementeeBeanBuilder
+								.getImplementeeMethodInvocationFactory())));
+		Assert.assertTrue(handler.equals(implementee));
+		Assert.assertFalse(handler.equals(new Object()));
+	}
+
+	public static interface Implementee
+	{
+		Number plus(Number a, Number b);
+
+		Number minus(Number a, Number b);
+	}
+
+	public static class Implementor0 implements Implementee
+	{
+		public static final int RE = 1;
 
 		@Override
-		public String handle()
+		public Number plus(Number a, Number b)
 		{
 			return RE;
 		}
-	}
 
-	public static class Implementor1 extends Implementee
-	{
-		public static final String RE = Implementor1.class.getName();
-
+		@NotImplement
 		@Override
-		public String handle()
+		public Number minus(Number a, Number b)
+		{
+			return null;
+		}
+	}
+
+	@Implementor(Implementee.class)
+	public static class Implementor1
+	{
+		public static final int RE = 2;
+
+		@Implement
+		public Number plus(Integer a, Integer b)
 		{
 			return RE;
 		}
-	}
-
-	public static Method getMethodByName(Class<?> clazz, String name)
-	{
-		for (Method method : clazz.getMethods())
-		{
-			if (method.getName().equals(name))
-				return method;
-		}
-
-		for (Method method : clazz.getDeclaredMethods())
-		{
-			if (method.getName().equals(name))
-				return method;
-		}
-
-		return null;
-	}
-
-	public static Method getMethodByName(Method[] methods, String name)
-	{
-		for (Method method : methods)
-		{
-			if (method.getName().equals(name))
-				return method;
-		}
-
-		return null;
-	}
-
-	public static Method getMethodByNameAndType(Class<?> clazz, String name,
-			Class<?>... paramTypes)
-	{
-		for (Method method : clazz.getMethods())
-		{
-			if (method.getName().equals(name)
-					&& Arrays.equals(method.getParameterTypes(), paramTypes))
-				return method;
-		}
-
-		for (Method method : clazz.getDeclaredMethods())
-		{
-			if (method.getName().equals(name)
-					&& Arrays.equals(method.getParameterTypes(), paramTypes))
-				return method;
-		}
-
-		return null;
-	}
-
-	public static Method getMethodByNameAndType(Method[] methods, String name,
-			Class<?>... paramTypes)
-	{
-		for (Method method : methods)
-		{
-			if (method.getName().equals(name)
-					&& Arrays.equals(method.getParameterTypes(), paramTypes))
-				return method;
-		}
-
-		return null;
 	}
 }
