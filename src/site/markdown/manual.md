@@ -19,7 +19,19 @@ Simply add the following content
 to your `applicationContext.xml`, then you will be able to write <i>ximplementation</i> featured beans in your Spring project.
 
 ## Dependency creation
-The [ImplementeeBeanCreationPostProcessor](apidocs/org/ximplementation/spring/ImplementeeBeanCreationPostProcessor.html) will only handle dependencies matching all of the following conditions:
+The [ImplementeeBeanCreationPostProcessor](apidocs/org/ximplementation/spring/ImplementeeBeanCreationPostProcessor.html) can handle <i>ximplementation</i> dependencies defined by XML configuration files or by annotations.
+
+For dependencies defined by XML configuration files, the `'ref'` attribute in `<property>` tag should be defined as
+
+`ref="@ximplementation"`
+
+for using the property type as the dependency <i>implementee</i>, or defined as
+
+`ref="@ximplementation:class-name"`
+
+for using `class-name` class as the dependency <i>implementee</i>.
+
+For dependencies defined by annotations, all of the following conditions should be matched:
 
 * The injected setter method or field is annotated with `org.springframework.beans.factory.annotation.Autowired` or `javax.inject.Inject`;  
 * The injected setter method or field is NOT annotated with `org.springframework.beans.factory.annotation.Qualifier` nor `javax.inject.Named` nor `javax.annotation.Resource`.  
@@ -33,8 +45,7 @@ The `BeanHolder` is used for holding prototype Spring beans, the `SingletonBeanH
 3. Use the [CglibImplementeeBeanBuilder](apidocs/org/ximplementation/spring/CglibImplementeeBeanBuilder.html) with the `Implementation` and the `EditableImplementorBeanHolderFactory` above to create a CGLIB <i>implementee</i> bean.
 4. Initalize the CGLIB <i>implementee</i> bean by calling `org.springframework.beans.factory.config.AutowireCapableBeanFactory.initializeBean(Object, String)` method, all `BeanPostProcessor`s will process it for applying Spring AOP.
 5. Register the CGLIB <i>implementee</i> bean by calling `org.springframework.beans.factory.config.ConfigurableListableBeanFactory.registerResolvableDependency(Class, Object)` method.
-
-That's ok, the subsequent `org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor` will use the CGLIB <i>implementee</i> bean for dependency injection.
+6. For dependencies defined by XML configuration files, add the CGLIB <i>implementee</i> to the `PropertyValues`, for applying later by the `BeanFactory`. For dependencies defined by annotations, nothing is done, the subsequent `org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor` will use the CGLIB <i>implementee</i> bean for dependency injection.
 
 Note that the `ImplementeeBeanCreationPostProcessor ` will create only one CGLIB <i>implementee</i> bean for a injected type in the whole Spring context, and the bean is only used for dependency injection, you can not get it through `BeanFactory.getBean(...)` methods.
 

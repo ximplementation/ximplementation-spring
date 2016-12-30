@@ -69,8 +69,29 @@ import org.ximplementation.support.ImplementorManager;
  * features.
  * </p>
  * <p>
- * This {@code BeanPostProcessor} will only handle dependencies matching all of
- * the following conditions:
+ * This {@code BeanPostProcessor} can handle <i>ximplementation</i> dependencies
+ * defined by XML configuration files or by annotations.
+ * </p>
+ * <p>
+ * For dependencies defined by XML configuration files, the {@code 'ref'}
+ * attribute in {@code <property>} tag should be defined as
+ * </p>
+ * <p>
+ * <code>ref="@ximplementation"</code>
+ * </p>
+ * <p>
+ * for using the property type as the dependency <i>implementee</i>, or defined
+ * as
+ * </p>
+ * <p>
+ * <code>ref="@ximplementation:<i>class-name</i>"</code>
+ * </p>
+ * <p>
+ * for using <i>class-name</i> class as the dependency <i>implementee</i>.
+ * </p>
+ * <p>
+ * For dependencies defined by annotations, all of the following conditions
+ * should be matched:
  * </p>
  * <ul>
  * <li>The injected setter method or field is annotated with
@@ -82,8 +103,8 @@ import org.ximplementation.support.ImplementorManager;
  * Spring context.</li>
  * </ul>
  * <p>
- * If matched, it will use {@linkplain CglibImplementeeBeanBuilder} to create
- * CGLIB <i>implementee</i> beans for dependency injection.
+ * If matching found, it will use {@linkplain CglibImplementeeBeanBuilder} to
+ * create CGLIB <i>implementee</i> beans for dependency injection.
  * </p>
  * <p>
  * <b>Attention :</b>
