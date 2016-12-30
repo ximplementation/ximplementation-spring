@@ -58,7 +58,7 @@ public class ImplementeeBeanCreationPostProcessorTest
 	}
 
 	@Test
-	public void testInjectionAndAop()
+	public void testInjectionAndAop_byAnnotation()
 	{
 		Controller controller = applicationContext.getBean(Controller.class);
 
@@ -73,6 +73,44 @@ public class ImplementeeBeanCreationPostProcessorTest
 
 		re = controller.handle(new Float(5.0F));
 		assertEquals(MyAspect.PREFIX + ServiceImpl3.MY_RE, re);
+	}
+
+	@Test
+	public void testInjectionAndAop_byXMLConfig()
+	{
+		{
+			ControllerForXMLConfig controller = (ControllerForXMLConfig) applicationContext
+					.getBean("controller0-xml-config");
+
+			String re = controller.handle(new Byte((byte) 5));
+			assertEquals(MyAspect.PREFIX + ServiceImpl0.MY_RE, re);
+
+			re = controller.handle(ServiceImpl1.MY_NUMBER);
+			assertEquals(MyAspect.PREFIX + ServiceImpl1.MY_RE, re);
+
+			re = controller.handle(12345);
+			assertEquals(MyAspect.PREFIX + ServiceImpl2.MY_RE, re);
+
+			re = controller.handle(new Float(5.0F));
+			assertEquals(MyAspect.PREFIX + ServiceImpl3.MY_RE, re);
+		}
+
+		{
+			ControllerForXMLConfig controller = (ControllerForXMLConfig) applicationContext
+					.getBean("controller1-xml-config");
+
+			String re = controller.handle(new Byte((byte) 5));
+			assertEquals(MyAspect.PREFIX + ServiceImpl0.MY_RE, re);
+
+			re = controller.handle(ServiceImpl1.MY_NUMBER);
+			assertEquals(MyAspect.PREFIX + ServiceImpl1.MY_RE, re);
+
+			re = controller.handle(12345);
+			assertEquals(MyAspect.PREFIX + ServiceImpl2.MY_RE, re);
+
+			re = controller.handle(new Float(5.0F));
+			assertEquals(MyAspect.PREFIX + ServiceImpl3.MY_RE, re);
+		}
 	}
 
 	@Test
@@ -523,6 +561,31 @@ public class ImplementeeBeanCreationPostProcessorTest
 		public void setService(Service service)
 		{
 			this.service = service;
+		}
+	}
+
+	public static class ControllerForXMLConfig
+	{
+		private Service service;
+
+		public ControllerForXMLConfig()
+		{
+			super();
+		}
+
+		public Service getService()
+		{
+			return service;
+		}
+
+		public void setService(Service service)
+		{
+			this.service = service;
+		}
+
+		public String handle(Number number)
+		{
+			return this.service.handle(number);
 		}
 	}
 

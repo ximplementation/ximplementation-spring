@@ -16,4 +16,12 @@
 	<aop:aspectj-autoproxy />
 	
     <bean class="org.ximplementation.spring.ImplementeeBeanCreationPostProcessor" />
+    
+    <bean id="controller0-xml-config" class="org.ximplementation.spring.ImplementeeBeanCreationPostProcessorTest$ControllerForXMLConfig">
+    	<property name="service" ref="@ximplementation" />
+    </bean>
+    
+    <bean id="controller1-xml-config" class="org.ximplementation.spring.ImplementeeBeanCreationPostProcessorTest$ControllerForXMLConfig">
+    	<property name="service" ref="@ximplementation:org.ximplementation.spring.ImplementeeBeanCreationPostProcessorTest$Service" />
+    </bean>
 </beans>
