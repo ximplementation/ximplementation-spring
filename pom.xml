@@ -9,8 +9,11 @@
 	<version>0.1.0</version>
 
 	<name>ximplementation-spring</name>
-	<description>Ximplementation-spring is a library that lets you use ximplementation in Spring, makes Spring support multiple dependency injection and more ximplementation features.</description>
-	<url>https://github.com/earthangry/ximplementation-spring</url>
+	<description>
+		Ximplementation-spring is a library that lets you use ximplementation in Spring, makes Spring support multiple dependency injection and more ximplementation features.
+		Maven command : mvn clean package install site assembly:single
+	</description>
+	<url>https://github.com/ximplementation/ximplementation-spring</url>
 	
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

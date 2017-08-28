@@ -7,6 +7,6 @@ Ximplementation-spring is a library that lets you use <i>ximplementation</i> in 
 
 [API](apidocs/index.html)
 
-You can get the source [Here](https://github.com/earthangry/ximplementation-spring) in Github.
+You can get the source [Here](https://github.com/ximplementation/ximplementation-spring) in Github.
 
-The <i>ximplementation</i> is a framework that lets you write implementation freely based on Java annotations and makes your program support runtime polymorphism, see [Here](https://github.com/earthangry/ximplementation) for more.
+The <i>ximplementation</i> is a framework that lets you write implementation freely based on Java annotations and makes your program support runtime polymorphism, see [Here](https://github.com/ximplementation/ximplementation) for more.
