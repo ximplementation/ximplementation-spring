@@ -9,4 +9,4 @@ Ximplementation-spring is a library that lets you use <i>ximplementation</i> in 
 
 You can get the source [Here](https://github.com/ximplementation/ximplementation-spring) in Github.
 
-The <i>ximplementation</i> is a framework that lets you write implementation freely based on Java annotations and makes your program support invocation routing, see [Here](https://github.com/ximplementation/ximplementation) for more.
+The <i>ximplementation</i> is an invocation routing framework based on Java annotations, see [Here](https://github.com/ximplementation/ximplementation) for more.
